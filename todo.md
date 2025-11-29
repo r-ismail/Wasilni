@@ -108,3 +108,15 @@
 - [x] Write tests for driver availability
 - [x] Write tests for admin operations
 - [ ] Test real-time WebSocket communication
+
+## Ride-Sharing Feature
+- [x] Add ridePassengers table for multi-passenger tracking
+- [x] Update rides table with isShared flag and maxPassengers
+- [x] Implement route matching algorithm for compatible rides
+- [x] Add shared ride option in booking form
+- [x] Implement cost splitting calculation
+- [x] Display passenger list for drivers
+- [x] Show other passengers info to riders
+- [x] Update payment system for split payments
+- [x] Add ride-sharing discount pricing
+- [x] Test ride-sharing functionality

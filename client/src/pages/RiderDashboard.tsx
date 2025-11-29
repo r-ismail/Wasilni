@@ -3,6 +3,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -19,10 +20,46 @@ export default function RiderDashboard() {
   const [dropoffLat, setDropoffLat] = useState("");
   const [dropoffLng, setDropoffLng] = useState("");
   const [vehicleType, setVehicleType] = useState<"economy" | "comfort" | "premium">("economy");
+  const [isShared, setIsShared] = useState(false);
+  const [showCompatibleRides, setShowCompatibleRides] = useState(false);
+  const [compatibleRides, setCompatibleRides] = useState<any[]>([]);
   const [estimatedFare, setEstimatedFare] = useState<number | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
   const [mapServices, setMapServices] = useState<any>(null);
+
+  const { data: sharedRidesData, refetch: refetchSharedRides } = trpc.rider.findSharedRides.useQuery(
+    {
+      pickupLatitude: pickupLat,
+      pickupLongitude: pickupLng,
+      dropoffLatitude: dropoffLat,
+      dropoffLongitude: dropoffLng,
+      vehicleType,
+    },
+    {
+      enabled: false, // Only fetch when user searches
+    }
+  );
+
+  const joinSharedRideMutation = trpc.rider.joinSharedRide.useMutation({
+    onSuccess: () => {
+      toast.success("Successfully joined shared ride!");
+      setShowCompatibleRides(false);
+      // Reset form
+      setPickupAddress("");
+      setPickupLat("");
+      setPickupLng("");
+      setDropoffAddress("");
+      setDropoffLat("");
+      setDropoffLng("");
+      setEstimatedFare(null);
+      setDistance(null);
+      setDuration(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to join ride: ${error.message}`);
+    },
+  });
 
   const requestRideMutation = trpc.rider.requestRide.useMutation({
     onSuccess: (data) => {
@@ -118,45 +155,89 @@ export default function RiderDashboard() {
         setDistance(distanceMeters);
         setDuration(durationSeconds);
         
-        // Calculate fare
-        const fareResponse = await trpc.common.calculateFare.useQuery({
-          distance: distanceMeters,
-          vehicleType,
-        });
-        
-        if (fareResponse.data) {
-          setEstimatedFare(fareResponse.data.estimatedFare);
-        }
+        // Fare will be calculated when user clicks request button
       }
     } catch (error) {
       toast.error("Failed to calculate route");
     }
   };
 
-  const handleRequestRide = () => {
+  const handleSearchSharedRides = async () => {
     if (!pickupLat || !pickupLng || !dropoffLat || !dropoffLng) {
       toast.error("Please select both pickup and dropoff locations");
       return;
     }
 
+    const result = await refetchSharedRides();
+    if (result.data && result.data.length > 0) {
+      setCompatibleRides(result.data);
+      setShowCompatibleRides(true);
+      toast.success(`Found ${result.data.length} compatible shared rides`);
+    } else {
+      toast.info("No compatible shared rides found. Creating a new shared ride...");
+      handleRequestRide();
+    }
+  };
+
+  const handleJoinRide = (rideId: number, rideFare: number) => {
     if (!estimatedFare) {
       toast.error("Please wait for fare calculation");
       return;
     }
 
-    requestRideMutation.mutate({
+    joinSharedRideMutation.mutate({
+      rideId,
       pickupAddress,
       pickupLatitude: pickupLat,
       pickupLongitude: pickupLng,
       dropoffAddress,
       dropoffLatitude: dropoffLat,
       dropoffLongitude: dropoffLng,
-      vehicleType,
-      estimatedFare,
-      distance: distance || undefined,
-      duration: duration || undefined,
+      fare: estimatedFare, // Individual fare with discount
     });
   };
+
+  const handleRequestRide = async () => {
+    if (!pickupLat || !pickupLng || !dropoffLat || !dropoffLng) {
+      toast.error("Please select both pickup and dropoff locations");
+      return;
+    }
+
+    if (!distance) {
+      toast.error("Please wait for route calculation");
+      return;
+    }
+
+    // Calculate fare with shared discount if applicable
+    try {
+      const fareCalc = await fetch(`/api/trpc/common.calculateFare?input=${encodeURIComponent(JSON.stringify({
+        distance,
+        vehicleType,
+        isShared,
+      }))}`);
+      const fareData = await fareCalc.json();
+      const calculatedFare = fareData.result?.data?.estimatedFare || estimatedFare || 0;
+      
+      requestRideMutation.mutate({
+        pickupAddress,
+        pickupLatitude: pickupLat,
+        pickupLongitude: pickupLng,
+        dropoffAddress,
+        dropoffLatitude: dropoffLat,
+        dropoffLongitude: dropoffLng,
+        vehicleType,
+        estimatedFare: calculatedFare,
+        distance: distance || undefined,
+        duration: duration || undefined,
+        isShared,
+        maxPassengers: isShared ? 4 : 1,
+      });
+    } catch (error) {
+      toast.error("Failed to calculate fare");
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -223,6 +304,25 @@ export default function RiderDashboard() {
                 </Select>
               </div>
 
+              {/* Shared Ride Option */}
+              <div className="flex items-center space-x-2 p-4 border rounded-lg">
+                <input
+                  type="checkbox"
+                  id="isShared"
+                  checked={isShared}
+                  onChange={(e) => setIsShared(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <div className="flex-1">
+                  <Label htmlFor="isShared" className="font-semibold cursor-pointer">
+                    Shared Ride (20% off)
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Share your ride with others going in the same direction
+                  </p>
+                </div>
+              </div>
+
               {/* Fare Estimate */}
               {estimatedFare !== null && (
                 <Card className="bg-muted">
@@ -250,15 +350,62 @@ export default function RiderDashboard() {
               )}
 
               {/* Request Button */}
-              <Button
-                onClick={handleRequestRide}
-                disabled={requestRideMutation.isPending || !pickupLat || !dropoffLat}
-                className="w-full"
-                size="lg"
-              >
-                {requestRideMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Request Ride
-              </Button>
+              {isShared ? (
+                <Button
+                  onClick={handleSearchSharedRides}
+                  disabled={!pickupLat || !dropoffLat || !distance}
+                  className="w-full"
+                  size="lg"
+                >
+                  Find Shared Rides
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleRequestRide}
+                  disabled={requestRideMutation.isPending || !pickupLat || !dropoffLat || !distance}
+                  className="w-full"
+                  size="lg"
+                >
+                  {requestRideMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Request Ride
+                </Button>
+              )}
+
+              {/* Compatible Rides List */}
+              {showCompatibleRides && compatibleRides.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Available Shared Rides</h3>
+                  {compatibleRides.map((ride) => (
+                    <Card key={ride.id} className="border-2">
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm font-medium">Ride #{ride.id}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {ride.currentPassengers}/{ride.maxPassengers} passengers
+                              </p>
+                            </div>
+                            <Badge variant="outline">{ride.vehicleType}</Badge>
+                          </div>
+                          <div className="text-sm">
+                            <p className="text-muted-foreground">From: {ride.pickupAddress}</p>
+                            <p className="text-muted-foreground">To: {ride.dropoffAddress}</p>
+                          </div>
+                          <Button
+                            onClick={() => handleJoinRide(ride.id, ride.estimatedFare)}
+                            disabled={joinSharedRideMutation.isPending}
+                            size="sm"
+                            className="w-full"
+                          >
+                            Join Ride - ${((estimatedFare || 0) / 100).toFixed(2)}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

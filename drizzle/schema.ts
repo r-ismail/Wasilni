@@ -96,6 +96,11 @@ export const rides = mysqlTable("rides", {
   cancellationReason: text("cancellationReason"),
   cancelledBy: mysqlEnum("cancelledBy", ["rider", "driver", "admin"]),
   
+  // Ride-sharing fields
+  isShared: boolean("isShared").default(false).notNull(),
+  maxPassengers: int("maxPassengers").default(1).notNull(),
+  currentPassengers: int("currentPassengers").default(1).notNull(),
+  
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -161,3 +166,40 @@ export const locationTracking = mysqlTable("locationTracking", {
 
 export type LocationTracking = typeof locationTracking.$inferSelect;
 export type InsertLocationTracking = typeof locationTracking.$inferInsert;
+
+/**
+ * Ride passengers table for tracking multiple passengers in shared rides
+ */
+export const ridePassengers = mysqlTable("ridePassengers", {
+  id: int("id").autoincrement().primaryKey(),
+  rideId: int("rideId").notNull(),
+  passengerId: int("passengerId").notNull(),
+  
+  // Individual passenger pickup/dropoff
+  pickupAddress: text("pickupAddress").notNull(),
+  pickupLatitude: varchar("pickupLatitude", { length: 20 }).notNull(),
+  pickupLongitude: varchar("pickupLongitude", { length: 20 }).notNull(),
+  dropoffAddress: text("dropoffAddress").notNull(),
+  dropoffLatitude: varchar("dropoffLatitude", { length: 20 }).notNull(),
+  dropoffLongitude: varchar("dropoffLongitude", { length: 20 }).notNull(),
+  
+  // Individual fare (split from total)
+  fare: int("fare").notNull(), // in cents
+  paymentStatus: mysqlEnum("paymentStatus", ["pending", "completed", "failed"]).default("pending").notNull(),
+  
+  // Status for this passenger
+  status: mysqlEnum("status", [
+    "waiting",
+    "picked_up",
+    "dropped_off"
+  ]).default("waiting").notNull(),
+  
+  pickedUpAt: timestamp("pickedUpAt"),
+  droppedOffAt: timestamp("droppedOffAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RidePassenger = typeof ridePassengers.$inferSelect;
+export type InsertRidePassenger = typeof ridePassengers.$inferInsert;

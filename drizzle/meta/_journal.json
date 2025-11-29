@@ -15,6 +15,13 @@
       "when": 1764371040576,
       "tag": "0001_demonic_human_fly",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1764375892879,
+      "tag": "0002_aspiring_supreme_intelligence",
+      "breakpoints": true
     }
   ]
 }

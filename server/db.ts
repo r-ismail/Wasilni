@@ -12,7 +12,9 @@ import {
   ratings,
   InsertRating,
   locationTracking,
-  InsertLocationTracking
+  InsertLocationTracking,
+  ridePassengers,
+  InsertRidePassenger
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -391,4 +393,113 @@ export async function getLocationTrackingByRideId(rideId: number) {
   return await db.select().from(locationTracking)
     .where(eq(locationTracking.rideId, rideId))
     .orderBy(desc(locationTracking.timestamp));
+}
+
+// ============ RIDE-SHARING OPERATIONS ============
+
+export async function addPassengerToRide(passenger: InsertRidePassenger) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(ridePassengers).values(passenger);
+  return result;
+}
+
+export async function getPassengersByRideId(rideId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(ridePassengers)
+    .where(eq(ridePassengers.rideId, rideId))
+    .orderBy(desc(ridePassengers.createdAt));
+}
+
+export async function updatePassengerStatus(
+  passengerId: number,
+  status: "waiting" | "picked_up" | "dropped_off"
+) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updates: any = { status };
+  
+  if (status === "picked_up") {
+    updates.pickedUpAt = new Date();
+  } else if (status === "dropped_off") {
+    updates.droppedOffAt = new Date();
+  }
+  
+  await db.update(ridePassengers).set(updates).where(eq(ridePassengers.id, passengerId));
+}
+
+export async function updatePassengerPaymentStatus(
+  passengerId: number,
+  paymentStatus: "pending" | "completed" | "failed"
+) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(ridePassengers).set({ paymentStatus }).where(eq(ridePassengers.id, passengerId));
+}
+
+export async function findCompatibleSharedRides(
+  pickupLat: number,
+  pickupLng: number,
+  dropoffLat: number,
+  dropoffLng: number,
+  vehicleType: string,
+  maxDetourKm: number = 2
+) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Find rides that are:
+  // 1. Shared rides with available capacity
+  // 2. Same vehicle type
+  // 3. Status is searching or accepted (not started yet)
+  // 4. Within reasonable distance from pickup/dropoff (simple bounding box)
+  
+  const latRange = maxDetourKm / 111; // Rough conversion: 1 degree ≈ 111km
+  const lngRange = maxDetourKm / 111;
+  
+  const compatibleRides = await db.select().from(rides)
+    .where(
+      and(
+        eq(rides.isShared, true),
+        eq(rides.vehicleType, vehicleType as any),
+        or(
+          eq(rides.status, "searching"),
+          eq(rides.status, "accepted")
+        ),
+        sql`${rides.currentPassengers} < ${rides.maxPassengers}`
+      )
+    )
+    .orderBy(desc(rides.requestedAt));
+  
+  // Filter by distance (simple bounding box check)
+  return compatibleRides.filter(ride => {
+    const ridePickupLat = parseFloat(ride.pickupLatitude);
+    const ridePickupLng = parseFloat(ride.pickupLongitude);
+    const rideDropoffLat = parseFloat(ride.dropoffLatitude);
+    const rideDropoffLng = parseFloat(ride.dropoffLongitude);
+    
+    const pickupInRange = 
+      Math.abs(ridePickupLat - pickupLat) <= latRange &&
+      Math.abs(ridePickupLng - pickupLng) <= lngRange;
+    
+    const dropoffInRange = 
+      Math.abs(rideDropoffLat - dropoffLat) <= latRange &&
+      Math.abs(rideDropoffLng - dropoffLng) <= lngRange;
+    
+    return pickupInRange && dropoffInRange;
+  });
+}
+
+export async function incrementRidePassengerCount(rideId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(rides)
+    .set({ currentPassengers: sql`${rides.currentPassengers} + 1` })
+    .where(eq(rides.id, rideId));
 }

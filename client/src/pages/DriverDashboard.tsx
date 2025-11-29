@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { MapPin, Navigation, DollarSign, Car, CheckCircle } from "lucide-react";
+import { MapPin, Navigation, DollarSign, Car, CheckCircle, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function DriverDashboard() {
@@ -125,7 +125,15 @@ export default function DriverDashboard() {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">New Ride Request</CardTitle>
-                        <Badge variant="outline">{ride.vehicleType}</Badge>
+                        <div className="flex gap-2">
+                          <Badge variant="outline">{ride.vehicleType}</Badge>
+                          {ride.isShared && (
+                            <Badge variant="secondary">
+                              <Users className="h-3 w-3 mr-1" />
+                              {ride.currentPassengers}/{ride.maxPassengers}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <CardDescription>
                         Requested {new Date(ride.requestedAt).toLocaleTimeString()}

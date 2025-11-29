@@ -49,6 +49,81 @@ export const appRouter = router({
 
   // ============ RIDER OPERATIONS ============
   rider: router({
+    // Ride-sharing endpoints
+    findSharedRides: protectedProcedure
+      .input(z.object({
+        pickupLatitude: z.string(),
+        pickupLongitude: z.string(),
+        dropoffLatitude: z.string(),
+        dropoffLongitude: z.string(),
+        vehicleType: z.enum(["economy", "comfort", "premium"]),
+      }))
+      .query(async ({ input }) => {
+        const compatibleRides = await db.findCompatibleSharedRides(
+          parseFloat(input.pickupLatitude),
+          parseFloat(input.pickupLongitude),
+          parseFloat(input.dropoffLatitude),
+          parseFloat(input.dropoffLongitude),
+          input.vehicleType
+        );
+        return compatibleRides;
+      }),
+    
+    joinSharedRide: protectedProcedure
+      .input(z.object({
+        rideId: z.number(),
+        pickupAddress: z.string(),
+        pickupLatitude: z.string(),
+        pickupLongitude: z.string(),
+        dropoffAddress: z.string(),
+        dropoffLatitude: z.string(),
+        dropoffLongitude: z.string(),
+        fare: z.number(), // individual fare in cents
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const ride = await db.getRideById(input.rideId);
+        if (!ride) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Ride not found' });
+        }
+        
+        if (!ride.isShared) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'This is not a shared ride' });
+        }
+        
+        if (ride.currentPassengers >= ride.maxPassengers) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Ride is full' });
+        }
+        
+        if (ride.status !== "searching" && ride.status !== "accepted") {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Ride has already started' });
+        }
+        
+        // Add passenger to ride
+        await db.addPassengerToRide({
+          rideId: input.rideId,
+          passengerId: ctx.user.id,
+          pickupAddress: input.pickupAddress,
+          pickupLatitude: input.pickupLatitude,
+          pickupLongitude: input.pickupLongitude,
+          dropoffAddress: input.dropoffAddress,
+          dropoffLatitude: input.dropoffLatitude,
+          dropoffLongitude: input.dropoffLongitude,
+          fare: input.fare,
+          status: "waiting",
+        });
+        
+        // Increment passenger count
+        await db.incrementRidePassengerCount(input.rideId);
+        
+        return { success: true };
+      }),
+    
+    getRidePassengers: protectedProcedure
+      .input(z.object({ rideId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPassengersByRideId(input.rideId);
+      }),
+
     requestRide: protectedProcedure
       .input(z.object({
         pickupAddress: z.string(),
@@ -61,19 +136,46 @@ export const appRouter = router({
         estimatedFare: z.number(), // in cents
         distance: z.number().optional(), // in meters
         duration: z.number().optional(), // in seconds
+        isShared: z.boolean().optional(),
+        maxPassengers: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const result = await db.createRide({
+        const rideData: any = {
           riderId: ctx.user.id,
           ...input,
           status: "searching",
-        });
+        };
+        
+        // If shared ride, add the creator as first passenger
+        if (input.isShared) {
+          rideData.isShared = true;
+          rideData.maxPassengers = input.maxPassengers || 4;
+          rideData.currentPassengers = 1;
+        }
+        
+        const result = await db.createRide(rideData);
+        const rideId = (result as any).insertId ? Number((result as any).insertId) : 0;
+        
+        // If shared ride, add creator as first passenger
+        if (input.isShared && rideId > 0) {
+          await db.addPassengerToRide({
+            rideId,
+            passengerId: ctx.user.id,
+            pickupAddress: input.pickupAddress,
+            pickupLatitude: input.pickupLatitude,
+            pickupLongitude: input.pickupLongitude,
+            dropoffAddress: input.dropoffAddress,
+            dropoffLatitude: input.dropoffLatitude,
+            dropoffLongitude: input.dropoffLongitude,
+            fare: input.estimatedFare,
+            status: "waiting",
+          });
+        }
         
         // In a real app, this would trigger WebSocket notifications to available drivers
-        const insertId = (result as any).insertId;
         return { 
           success: true, 
-          rideId: insertId ? Number(insertId) : 0
+          rideId
         };
       }),
     
@@ -319,6 +421,17 @@ export const appRouter = router({
     getVehicles: driverProcedure.query(async ({ ctx }) => {
       return await db.getVehiclesByDriverId(ctx.user.id);
     }),
+    
+    // Passenger management for shared rides
+    updatePassengerStatus: driverProcedure
+      .input(z.object({
+        passengerId: z.number(),
+        status: z.enum(["waiting", "picked_up", "dropped_off"]),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updatePassengerStatus(input.passengerId, input.status);
+        return { success: true };
+      }),
   }),
 
   // ============ ADMIN OPERATIONS ============
@@ -421,6 +534,8 @@ export const appRouter = router({
       .input(z.object({
         distance: z.number(), // in meters
         vehicleType: z.enum(["economy", "comfort", "premium"]),
+        isShared: z.boolean().optional(),
+        currentPassengers: z.number().optional(),
       }))
       .query(({ input }) => {
         // Simple fare calculation: base fare + per km rate
@@ -433,11 +548,18 @@ export const appRouter = router({
         };
         
         const rate = rates[input.vehicleType];
-        const fare = rate.base + (distanceKm * rate.perKm);
+        let fare = rate.base + (distanceKm * rate.perKm);
+        
+        // Apply discount for shared rides (20% off per additional passenger)
+        if (input.isShared) {
+          const discount = 0.20; // 20% discount
+          fare = fare * (1 - discount);
+        }
         
         return {
           estimatedFare: Math.round(fare),
           currency: "USD",
+          isShared: input.isShared || false,
         };
       }),
   }),
