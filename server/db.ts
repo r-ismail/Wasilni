@@ -14,7 +14,11 @@ import {
   locationTracking,
   InsertLocationTracking,
   ridePassengers,
-  InsertRidePassenger
+  InsertRidePassenger,
+  savedLocations,
+  InsertSavedLocation,
+  recentLocations,
+  InsertRecentLocation
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -502,4 +506,65 @@ export async function incrementRidePassengerCount(rideId: number) {
   await db.update(rides)
     .set({ currentPassengers: sql`${rides.currentPassengers} + 1` })
     .where(eq(rides.id, rideId));
+}
+
+// ============ LOCATION MANAGEMENT ============
+
+export async function getSavedLocationsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(savedLocations)
+    .where(eq(savedLocations.userId, userId))
+    .orderBy(desc(savedLocations.createdAt));
+}
+
+export async function addSavedLocation(location: InsertSavedLocation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(savedLocations).values(location);
+  return result;
+}
+
+export async function deleteSavedLocation(locationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(savedLocations)
+    .where(
+      and(
+        eq(savedLocations.id, locationId),
+        eq(savedLocations.userId, userId)
+      )
+    );
+}
+
+export async function getRecentLocationsByUserId(userId: number, limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(recentLocations)
+    .where(eq(recentLocations.userId, userId))
+    .orderBy(desc(recentLocations.usedAt))
+    .limit(limit);
+}
+
+export async function addRecentLocation(location: InsertRecentLocation) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // Add new recent location
+  await db.insert(recentLocations).values(location);
+  
+  // Keep only last 20 recent locations per user
+  const allRecent = await db.select().from(recentLocations)
+    .where(eq(recentLocations.userId, location.userId))
+    .orderBy(desc(recentLocations.usedAt));
+  
+  if (allRecent.length > 20) {
+    const toDelete = allRecent.slice(20).map(r => r.id);
+    await db.delete(recentLocations)
+      .where(sql`${recentLocations.id} IN (${toDelete.join(',')})`);
+  }
 }

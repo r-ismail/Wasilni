@@ -524,6 +524,53 @@ export const appRouter = router({
       }),
   }),
 
+  // ============ LOCATION MANAGEMENT ============
+  locations: router({
+    getSavedLocations: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getSavedLocationsByUserId(ctx.user.id);
+    }),
+    
+    addSavedLocation: protectedProcedure
+      .input(z.object({
+        label: z.string(),
+        address: z.string(),
+        latitude: z.string(),
+        longitude: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.addSavedLocation({
+          userId: ctx.user.id,
+          ...input,
+        });
+        return { success: true };
+      }),
+    
+    deleteSavedLocation: protectedProcedure
+      .input(z.object({ locationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteSavedLocation(input.locationId, ctx.user.id);
+        return { success: true };
+      }),
+    
+    getRecentLocations: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getRecentLocationsByUserId(ctx.user.id);
+    }),
+    
+    addRecentLocation: protectedProcedure
+      .input(z.object({
+        address: z.string(),
+        latitude: z.string(),
+        longitude: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.addRecentLocation({
+          userId: ctx.user.id,
+          ...input,
+        });
+        return { success: true };
+      }),
+  }),
+
   // ============ COMMON OPERATIONS ============
   common: router({
     getAvailableDrivers: publicProcedure.query(async () => {

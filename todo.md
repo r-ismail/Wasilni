@@ -120,3 +120,25 @@
 - [x] Update payment system for split payments
 - [x] Add ride-sharing discount pricing
 - [x] Test ride-sharing functionality
+
+## Address Search Feature
+- [x] Add savedLocations table for favorite addresses
+- [x] Add recentLocations table for location history
+- [x] Implement backend API for saving favorite locations
+- [x] Implement backend API for recent locations
+- [x] Add Google Maps Places Autocomplete to pickup input
+- [x] Add Google Maps Places Autocomplete to dropoff input
+- [x] Implement current location detection with Geolocation API
+- [x] Display recent locations dropdown
+- [x] Display favorite locations dropdown
+- [x] Add ability to save/remove favorite locations
+- [x] Test address search functionality
+
+## Bilingual Support (Arabic/English)
+- [ ] Create i18n configuration and translation files
+- [ ] Add language switcher to navigation
+- [ ] Implement RTL layout support for Arabic
+- [ ] Translate all UI text (rider interface)
+- [ ] Translate all UI text (driver interface)
+- [ ] Translate all UI text (admin interface)
+- [ ] Test language switching functionality

@@ -203,3 +203,39 @@ export const ridePassengers = mysqlTable("ridePassengers", {
 
 export type RidePassenger = typeof ridePassengers.$inferSelect;
 export type InsertRidePassenger = typeof ridePassengers.$inferInsert;
+
+/**
+ * Saved locations (favorites) for quick address selection
+ */
+export const savedLocations = mysqlTable("savedLocations", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  
+  label: varchar("label", { length: 100 }).notNull(), // e.g., "Home", "Work", "Gym"
+  address: text("address").notNull(),
+  latitude: varchar("latitude", { length: 20 }).notNull(),
+  longitude: varchar("longitude", { length: 20 }).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SavedLocation = typeof savedLocations.$inferSelect;
+export type InsertSavedLocation = typeof savedLocations.$inferInsert;
+
+/**
+ * Recent locations for quick re-selection
+ */
+export const recentLocations = mysqlTable("recentLocations", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  
+  address: text("address").notNull(),
+  latitude: varchar("latitude", { length: 20 }).notNull(),
+  longitude: varchar("longitude", { length: 20 }).notNull(),
+  
+  usedAt: timestamp("usedAt").defaultNow().notNull(),
+});
+
+export type RecentLocation = typeof recentLocations.$inferSelect;
+export type InsertRecentLocation = typeof recentLocations.$inferInsert;
