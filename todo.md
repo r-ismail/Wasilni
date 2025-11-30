@@ -237,3 +237,8 @@
 - [x] Update UI to disable ride request button when rider has active ride
 - [x] Update UI to hide ride requests when driver has active ride
 - [x] Test complete ride flow from request to completion
+
+## Google Maps API Duplicate Loading Fix
+- [x] Fix Google Maps API being loaded multiple times on rider dashboard
+- [x] Ensure Map component loads the API script only once
+- [x] Test rider dashboard to verify no duplicate loading errors
