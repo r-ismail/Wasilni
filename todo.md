@@ -156,3 +156,17 @@
 - [x] Add geolocation tracking for drivers
 - [x] Test real-time location updates
 - [x] Optimize WebSocket performance and connection handling
+
+## Live Ride Tracking for Riders
+- [x] Update Socket.IO to broadcast driver position to specific rider during active ride
+- [x] Create endpoint to get active ride details with driver info
+- [x] Build LiveRideTracking component with real-time map
+- [x] Implement Google Maps Directions API for route visualization
+- [x] Add polyline rendering from driver to pickup/dropoff location
+- [x] Calculate and display dynamic ETA based on current traffic
+- [x] Show distance countdown (meters/km remaining)
+- [x] Implement ride status updates (approaching, arrived, started, completed)
+- [x] Add automatic map centering to keep driver in view
+- [x] Display driver info card with name, photo, rating, and vehicle details
+- [x] Add call driver button (simulated)
+- [x] Test live tracking functionality

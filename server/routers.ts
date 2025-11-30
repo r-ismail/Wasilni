@@ -195,6 +195,47 @@ export const appRouter = router({
         }
         return ride;
       }),
+
+    getActiveRide: protectedProcedure.query(async ({ ctx }) => {
+      const rides = await db.getRidesByRiderId(ctx.user.id);
+      const activeRide = rides.find(
+        (r) => r.status === "accepted" || r.status === "in_progress" || r.status === "driver_arriving"
+      );
+
+      if (!activeRide) {
+        return null;
+      }
+
+      // Get driver details if ride is accepted
+      if (activeRide.driverId) {
+        const database = await getDb();
+        if (database) {
+          const driverData = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, activeRide.driverId))
+            .limit(1);
+
+          if (driverData.length > 0) {
+            const driver = driverData[0];
+            return {
+              ...activeRide,
+              driver: {
+                id: driver.id,
+                name: driver.name,
+                phone: driver.phone,
+                profilePhoto: driver.profilePhoto,
+                averageRating: (driver.averageRating || 0) / 100,
+                currentLatitude: driver.currentLatitude ? parseFloat(driver.currentLatitude) : null,
+                currentLongitude: driver.currentLongitude ? parseFloat(driver.currentLongitude) : null,
+              },
+            };
+          }
+        }
+      }
+
+      return activeRide;
+    }),
     
     cancelRide: protectedProcedure
       .input(z.object({
@@ -362,9 +403,9 @@ export const appRouter = router({
         
         return { success: true };
       }),
-    
-    getRideHistory: driverProcedure.query(async ({ ctx }) => {
-      return await db.getRidesByDriverId(ctx.user.id);
+
+    getRideHistory: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getRidesByRiderId(ctx.user.id);
     }),
 
     getEarnings: protectedProcedure.query(async ({ ctx }) => {

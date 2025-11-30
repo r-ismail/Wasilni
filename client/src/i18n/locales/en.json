@@ -15,7 +15,8 @@
     "rating": "Rating",
     "comment": "Comment (Optional)",
     "commentPlaceholder": "Share your experience...",
-    "submit": "Submit Rating"
+    "submit": "Submit Rating",
+    "reconnecting": "Reconnecting..."
   },
   "home": {
     "welcome": "Welcome back, {{name}}!",
@@ -76,6 +77,12 @@
     "geolocationNotSupported": "Geolocation not supported",
     "mapServicesNotReady": "Map services not ready",
     "failedToGetAddress": "Failed to get address",
+    "driverOnTheWay": "Driver on the way",
+    "driverArriving": "Driver arriving",
+    "tripInProgress": "Trip in progress",
+    "call": "Call",
+    "destination": "Destination",
+    "cancelRide": "Cancel Ride",
     "rateDriver": "Rate Driver",
     "rateExperience": "How was your experience with this ride?"
   },

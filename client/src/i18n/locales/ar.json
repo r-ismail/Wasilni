@@ -15,7 +15,8 @@
     "rating": "التقييم",
     "comment": "تعليق (اختياري)",
     "commentPlaceholder": "شارك تجربتك...",
-    "submit": "إرسال التقييم"
+    "submit": "إرسال التقييم",
+    "reconnecting": "إعادة الاتصال..."
   },
   "home": {
     "welcome": "مرحباً بعودتك، {{name}}!",
@@ -76,6 +77,12 @@
     "geolocationNotSupported": "تحديد الموقع غير مدعوم",
     "mapServicesNotReady": "خدمات الخريطة غير جاهزة",
     "failedToGetAddress": "فشل في الحصول على العنوان",
+    "driverOnTheWay": "السائق في الطريق",
+    "driverArriving": "السائق يقترب",
+    "tripInProgress": "الرحلة جارية",
+    "call": "اتصال",
+    "destination": "الوجهة",
+    "cancelRide": "إلغاء الرحلة",
     "rateDriver": "تقييم السائق",
     "rateExperience": "كيف كانت تجربتك مع هذه الرحلة؟"
   },

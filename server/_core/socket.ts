@@ -63,6 +63,38 @@ export function initializeSocket(httpServer: HTTPServer) {
       }
     });
 
+    // Driver location update for specific ride
+    socket.on("ride:driver:location", async (data: { rideId: number; driverId: number; latitude: number; longitude: number }) => {
+      try {
+        const db = await getDb();
+        if (!db) {
+          console.error("[Socket.IO] Database not available");
+          return;
+        }
+
+        // Update driver location
+        await db
+          .update(users)
+          .set({
+            currentLatitude: data.latitude.toString(),
+            currentLongitude: data.longitude.toString(),
+            lastLocationUpdate: new Date(),
+          })
+          .where(eq(users.id, data.driverId));
+
+        // Broadcast to rider in this specific ride
+        io?.emit(`ride:${data.rideId}:driver:location`, {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          timestamp: new Date().toISOString(),
+        });
+
+        console.log(`[Socket.IO] Ride ${data.rideId} driver location updated`);
+      } catch (error) {
+        console.error("[Socket.IO] Error updating ride driver location:", error);
+      }
+    });
+
     // Ride status update (for real-time notifications)
     socket.on("ride:status", (data: { rideId: number; status: string; riderId: number; driverId?: number }) => {
       // Notify rider

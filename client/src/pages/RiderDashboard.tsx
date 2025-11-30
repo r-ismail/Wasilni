@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { MapView } from "@/components/Map";
 import { LocationSearchInput } from "@/components/LocationSearchInput";
+import { LiveRideTracking } from "@/components/LiveRideTracking";
 import { Loader2, MapPin, Navigation, Users, Star, DollarSign } from "lucide-react";
 import {
   Dialog,
@@ -46,6 +47,9 @@ export default function RiderDashboard() {
 
   const { data: savedLocations, refetch: refetchSavedLocations } = trpc.locations.getSavedLocations.useQuery();
   const { data: recentLocations } = trpc.locations.getRecentLocations.useQuery();
+  const { data: activeRide, refetch: refetchActiveRide } = trpc.rider.getActiveRide.useQuery(undefined, {
+    refetchInterval: 5000,
+  });
 
   const { data: sharedRidesData, refetch: refetchSharedRides } = trpc.rider.findSharedRides.useQuery(
     {
@@ -353,6 +357,27 @@ export default function RiderDashboard() {
       longitude: pickupLng,
     });
   };
+
+  const cancelRideMutation = trpc.rider.cancelRide.useMutation({
+    onSuccess: () => {
+      toast.success("Ride cancelled");
+      refetchActiveRide();
+    },
+  });
+
+  // Show live tracking if there's an active ride
+  if (activeRide) {
+    return (
+      <LiveRideTracking
+        ride={activeRide}
+        onCancel={async () => {
+          if (activeRide.id) {
+            await cancelRideMutation.mutateAsync({ rideId: activeRide.id });
+          }
+        }}
+      />
+    );
+  }
 
   const handleSaveDropoffLocation = () => {
     if (!saveLocationLabel.trim()) {
