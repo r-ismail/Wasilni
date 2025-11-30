@@ -4,13 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MapPin, Navigation, Users, CheckCircle } from "lucide-react";
+import { MapPin, Navigation, Users, CheckCircle, Radio } from "lucide-react";
 import { useLocation } from "wouter";
+import { useSocket } from "@/contexts/SocketContext";
+import { useEffect, useRef, useState } from "react";
 
 export default function DriverActiveRide() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
+  const { socket, isConnected } = useSocket();
+  const [isTracking, setIsTracking] = useState(false);
+  const locationIntervalRef = useRef<number | null>(null);
 
   const { data: rideHistory } = trpc.driver.getRideHistory.useQuery();
   const activeRide = rideHistory?.find(
@@ -64,6 +69,57 @@ export default function DriverActiveRide() {
     });
   };
 
+  // Start broadcasting location when there's an active ride
+  useEffect(() => {
+    if (!activeRide || !socket || !isConnected || !user) return;
+
+    const broadcastLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            
+            // Broadcast to Socket.IO
+            socket.emit("ride:driver:location", {
+              rideId: activeRide.id,
+              driverId: user.id,
+              latitude,
+              longitude,
+            });
+            
+            setIsTracking(true);
+          },
+          (error) => {
+            console.error("Error getting location:", error);
+            toast.error("Unable to get your location. Please enable location services.");
+            setIsTracking(false);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0,
+          }
+        );
+      } else {
+        toast.error("Geolocation is not supported by your browser");
+      }
+    };
+
+    // Broadcast immediately
+    broadcastLocation();
+
+    // Then broadcast every 5 seconds
+    locationIntervalRef.current = window.setInterval(broadcastLocation, 5000);
+
+    return () => {
+      if (locationIntervalRef.current) {
+        clearInterval(locationIntervalRef.current);
+        locationIntervalRef.current = null;
+      }
+      setIsTracking(false);
+    };
+  }, [activeRide, socket, isConnected, user]);
+
   if (!activeRide) {
     return (
       <div className="min-h-screen bg-background">
@@ -85,8 +141,16 @@ export default function DriverActiveRide() {
     <div className="min-h-screen bg-background">
       <div className="container py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Active Ride</h1>
-          <p className="text-muted-foreground">Manage your current ride</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Active Ride</h1>
+              <p className="text-muted-foreground">Manage your current ride</p>
+            </div>
+            <Badge variant={isTracking ? "default" : "secondary"} className="flex items-center gap-1">
+              <Radio className={`h-3 w-3 ${isTracking ? 'animate-pulse' : ''}`} />
+              {isTracking ? "Location Tracking Active" : "Location Tracking Inactive"}
+            </Badge>
+          </div>
         </div>
 
         {/* Ride Status */}
