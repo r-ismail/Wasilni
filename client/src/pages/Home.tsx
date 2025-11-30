@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Car, Users, Shield, MapPin, AlertCircle, Bell } from "lucide-react";
@@ -85,6 +86,7 @@ export default function Home() {
               <p className="text-muted-foreground">{t('home.chooseAction')}</p>
             </div>
             <div className="flex items-center gap-2">
+              <NotificationCenter />
               <LanguageSwitcher />
               <Button onClick={logout} variant="outline">
                 {t('common.logout')}

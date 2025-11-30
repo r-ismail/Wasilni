@@ -18,7 +18,9 @@ import {
   savedLocations,
   InsertSavedLocation,
   recentLocations,
-  InsertRecentLocation
+  InsertRecentLocation,
+  notifications,
+  InsertNotification
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -576,4 +578,68 @@ export async function addRecentLocation(location: InsertRecentLocation) {
     await db.delete(recentLocations)
       .where(sql`${recentLocations.id} IN (${toDelete.join(',')})`);
   }
+}
+
+
+// ==================== Notifications ====================
+
+export async function createNotification(notification: InsertNotification) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const result = await db.insert(notifications).values(notification);
+  return Number(result[0].insertId);
+}
+
+export async function getNotifications(userId: number, limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt))
+    .limit(limit);
+}
+
+export async function getUnreadNotificationCount(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(notifications)
+    .where(and(
+      eq(notifications.userId, userId),
+      eq(notifications.isRead, false)
+    ));
+  
+  return result[0]?.count || 0;
+}
+
+export async function markNotificationAsRead(notificationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(and(
+      eq(notifications.id, notificationId),
+      eq(notifications.userId, userId)
+    ));
+}
+
+export async function markAllNotificationsAsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(and(
+      eq(notifications.userId, userId),
+      eq(notifications.isRead, false)
+    ));
 }

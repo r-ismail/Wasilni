@@ -30,6 +30,12 @@ export function initializeSocket(httpServer: HTTPServer) {
       console.log(`[Socket.IO] Rider ${riderId} joined room`);
     });
 
+    // User joins their own room for notifications
+    socket.on("user:join", (userId: number) => {
+      socket.join(`user:${userId}`);
+      console.log(`[Socket.IO] User ${userId} joined room`);
+    });
+
     // Driver location update
     socket.on("driver:location", async (data: { driverId: number; latitude: number; longitude: number }) => {
       try {

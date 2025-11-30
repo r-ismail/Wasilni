@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -22,6 +23,7 @@ interface SocketProviderProps {
 export function SocketProvider({ children }: SocketProviderProps) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     // Connect to Socket.IO server
@@ -33,6 +35,11 @@ export function SocketProvider({ children }: SocketProviderProps) {
     socketInstance.on("connect", () => {
       console.log("[Socket.IO] Connected");
       setIsConnected(true);
+      
+      // Join user's personal room for notifications
+      if (user?.id) {
+        socketInstance.emit("user:join", user.id);
+      }
     });
 
     socketInstance.on("disconnect", () => {
@@ -45,7 +52,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     return () => {
       socketInstance.disconnect();
     };
-  }, []);
+  }, [user?.id]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

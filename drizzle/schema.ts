@@ -243,3 +243,37 @@ export const recentLocations = mysqlTable("recentLocations", {
 
 export type RecentLocation = typeof recentLocations.$inferSelect;
 export type InsertRecentLocation = typeof recentLocations.$inferInsert;
+
+/**
+ * Notifications table for in-app notification center
+ */
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  
+  type: mysqlEnum("type", [
+    "ride_accepted",
+    "driver_arriving",
+    "driver_arrived",
+    "trip_started",
+    "trip_completed",
+    "ride_cancelled",
+    "payment_completed",
+    "rating_received",
+    "system"
+  ]).notNull(),
+  
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  
+  // Related entities
+  rideId: int("rideId"),
+  relatedUserId: int("relatedUserId"), // Driver/Rider who triggered the notification
+  
+  isRead: boolean("isRead").default(false).notNull(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;

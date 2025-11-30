@@ -406,7 +406,17 @@ export const appRouter = router({
         await db.assignDriverToRide(input.rideId, ctx.user.id, input.vehicleId);
         await db.updateDriverStatus(ctx.user.id, "busy");
         
-        // Emit real-time status update
+        // Create notification for rider
+        const notificationId = await db.createNotification({
+          userId: ride.riderId,
+          type: "ride_accepted",
+          title: "Driver Accepted Your Ride!",
+          message: `${ctx.user.name} is on the way to pick you up.`,
+          rideId: input.rideId,
+          relatedUserId: ctx.user.id,
+        });
+        
+        // Emit real-time status update and notification
         const io = getIO();
         if (io) {
           io.to(`rider:${ride.riderId}`).emit("ride:status:update", {
@@ -415,6 +425,13 @@ export const appRouter = router({
             driverId: ctx.user.id,
             timestamp: new Date().toISOString(),
           });
+          
+          if (notificationId) {
+            const notification = await db.getNotifications(ride.riderId, 1);
+            if (notification && notification.length > 0) {
+              io.to(`user:${ride.riderId}`).emit("notification:new", notification[0]);
+            }
+          }
         }
         
         return { success: true };
@@ -433,7 +450,39 @@ export const appRouter = router({
         
         await db.updateRideStatus(input.rideId, input.status);
         
-        // Emit real-time status update
+        // Create notification based on status
+        let notificationTitle = "";
+        let notificationMessage = "";
+        let notificationType: "driver_arriving" | "driver_arrived" | "trip_started" | "trip_completed" = "driver_arriving";
+        
+        if (input.status === "driver_arriving") {
+          notificationType = "driver_arriving";
+          notificationTitle = "Driver is on the way";
+          notificationMessage = `${ctx.user.name} is heading to your pickup location.`;
+        } else if (input.status === "arrived") {
+          notificationType = "driver_arrived";
+          notificationTitle = "Driver has arrived!";
+          notificationMessage = `${ctx.user.name} is waiting at your pickup location.`;
+        } else if (input.status === "in_progress") {
+          notificationType = "trip_started";
+          notificationTitle = "Trip started";
+          notificationMessage = "Your ride is now in progress. Enjoy your trip!";
+        } else if (input.status === "completed") {
+          notificationType = "trip_completed";
+          notificationTitle = "Trip completed";
+          notificationMessage = "Your ride has been completed. Thank you for riding with us!";
+        }
+        
+        const notificationId = await db.createNotification({
+          userId: ride.riderId,
+          type: notificationType,
+          title: notificationTitle,
+          message: notificationMessage,
+          rideId: input.rideId,
+          relatedUserId: ctx.user.id,
+        });
+        
+        // Emit real-time status update and notification
         const io = getIO();
         if (io) {
           io.to(`rider:${ride.riderId}`).emit("ride:status:update", {
@@ -442,6 +491,13 @@ export const appRouter = router({
             driverId: ctx.user.id,
             timestamp: new Date().toISOString(),
           });
+          
+          if (notificationId) {
+            const notification = await db.getNotifications(ride.riderId, 1);
+            if (notification && notification.length > 0) {
+              io.to(`user:${ride.riderId}`).emit("notification:new", notification[0]);
+            }
+          }
         }
         
         // If completed, set driver back to available and create payment
@@ -877,6 +933,32 @@ export const appRouter = router({
           currency: "USD",
           isShared: input.isShared || false,
         };
+      }),
+  }),
+
+  // ============ NOTIFICATIONS ============
+  notifications: router({
+    getNotifications: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getNotifications(ctx.user.id);
+      }),
+    
+    getUnreadCount: protectedProcedure
+      .query(async ({ ctx }) => {
+        return await db.getUnreadNotificationCount(ctx.user.id);
+      }),
+    
+    markAsRead: protectedProcedure
+      .input(z.object({ notificationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.markNotificationAsRead(input.notificationId, ctx.user.id);
+        return { success: true };
+      }),
+    
+    markAllAsRead: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await db.markAllNotificationsAsRead(ctx.user.id);
+        return { success: true };
       }),
   }),
 });
