@@ -247,40 +247,128 @@ export default function RiderDashboard() {
 
 
   const calculateRoute = async (origin: any, destination: any) => {
-    if (!mapServices) return;
+    if (!mapServices) {
+      console.warn("Map services not ready");
+      return;
+    }
+
+    // Validate coordinates
+    if (!origin || !destination) {
+      console.warn("Invalid origin or destination");
+      return;
+    }
+
+    // Validate lat/lng values
+    const originLat = typeof origin.lat === 'function' ? origin.lat() : origin.lat;
+    const originLng = typeof origin.lng === 'function' ? origin.lng() : origin.lng;
+    const destLat = typeof destination.lat === 'function' ? destination.lat() : destination.lat;
+    const destLng = typeof destination.lng === 'function' ? destination.lng() : destination.lng;
+
+    if (!originLat || !originLng || !destLat || !destLng) {
+      console.warn("Invalid coordinates", { originLat, originLng, destLat, destLng });
+      return;
+    }
+
+    // Check if coordinates are valid numbers
+    if (isNaN(originLat) || isNaN(originLng) || isNaN(destLat) || isNaN(destLng)) {
+      console.warn("Coordinates are not valid numbers");
+      return;
+    }
 
     try {
       const directionsService = new mapServices.DirectionsService();
-      const result = await directionsService.route({
-        origin,
-        destination,
-        travelMode: mapServices.TravelMode.DRIVING,
-      });
+      
+      // Use callback-based API instead of promise
+      directionsService.route(
+        {
+          origin: new mapServices.LatLng(originLat, originLng),
+          destination: new mapServices.LatLng(destLat, destLng),
+          travelMode: mapServices.TravelMode.DRIVING,
+        },
+        (result: any, status: any) => {
+          if (status === mapServices.DirectionsStatus.OK && result.routes && result.routes.length > 0) {
+            const route = result.routes[0];
+            const leg = route.legs[0];
+            const distanceInMeters = leg.distance.value;
+            const durationInSeconds = leg.duration.value;
 
-      if (result.routes && result.routes.length > 0) {
-        const route = result.routes[0];
-        const leg = route.legs[0];
-        const distanceInMeters = leg.distance.value;
-        const durationInSeconds = leg.duration.value;
+            setDistance(distanceInMeters);
+            setDuration(durationInSeconds);
 
-        setDistance(distanceInMeters);
-        setDuration(durationInSeconds);
+            // Calculate fare
+            const baseFare = vehicleType === "economy" ? 500 : vehicleType === "comfort" ? 800 : 1200;
+            const perKm = vehicleType === "economy" ? 150 : vehicleType === "comfort" ? 200 : 300;
+            let fare = baseFare + (distanceInMeters / 1000) * perKm;
 
-        // Calculate fare
-        const baseFare = vehicleType === "economy" ? 500 : vehicleType === "comfort" ? 800 : 1200;
-        const perKm = vehicleType === "economy" ? 150 : vehicleType === "comfort" ? 200 : 300;
-        let fare = baseFare + (distanceInMeters / 1000) * perKm;
+            // Apply 20% discount for shared rides
+            if (isShared) {
+              fare = fare * 0.8;
+            }
 
-        // Apply 20% discount for shared rides
-        if (isShared) {
-          fare = fare * 0.8;
+            setEstimatedFare(Math.round(fare));
+          } else {
+            console.warn("Route calculation failed:", status);
+            // Set default values for estimation
+            const straightLineDistance = calculateStraightLineDistance(
+              originLat,
+              originLng,
+              destLat,
+              destLng
+            );
+            setDistance(straightLineDistance);
+            setDuration(Math.round(straightLineDistance / 10)); // Rough estimate: 10 m/s average
+            
+            // Calculate fare based on straight-line distance
+            const baseFare = vehicleType === "economy" ? 500 : vehicleType === "comfort" ? 800 : 1200;
+            const perKm = vehicleType === "economy" ? 150 : vehicleType === "comfort" ? 200 : 300;
+            let fare = baseFare + (straightLineDistance / 1000) * perKm;
+
+            if (isShared) {
+              fare = fare * 0.8;
+            }
+
+            setEstimatedFare(Math.round(fare));
+          }
         }
-
-        setEstimatedFare(Math.round(fare));
-      }
+      );
     } catch (error) {
       console.error("Route calculation error:", error);
+      // Fallback to straight-line distance
+      const straightLineDistance = calculateStraightLineDistance(
+        originLat,
+        originLng,
+        destLat,
+        destLng
+      );
+      setDistance(straightLineDistance);
+      setDuration(Math.round(straightLineDistance / 10));
+      
+      const baseFare = vehicleType === "economy" ? 500 : vehicleType === "comfort" ? 800 : 1200;
+      const perKm = vehicleType === "economy" ? 150 : vehicleType === "comfort" ? 200 : 300;
+      let fare = baseFare + (straightLineDistance / 1000) * perKm;
+
+      if (isShared) {
+        fare = fare * 0.8;
+      }
+
+      setEstimatedFare(Math.round(fare));
     }
+  };
+
+  // Helper function to calculate straight-line distance (Haversine formula)
+  const calculateStraightLineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
   };
 
   const handleFindSharedRides = async () => {
