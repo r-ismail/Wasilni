@@ -676,12 +676,12 @@ export default function RiderDashboard() {
                 ) : (
                   <Button
                     onClick={handleRequestRide}
-                    disabled={!pickupLat || !dropoffLat || requestRideMutation.isPending}
+                    disabled={!pickupLat || !dropoffLat || requestRideMutation.isPending || !!activeRide}
                     className="w-full"
                     size="lg"
                   >
                     {requestRideMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {t('rider.requestRideBtn')}
+                    {activeRide ? "You have an active ride" : t('rider.requestRideBtn')}
                   </Button>
                 )}
               </CardContent>

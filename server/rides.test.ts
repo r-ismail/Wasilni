@@ -4,10 +4,10 @@ import type { TrpcContext } from "./_core/context";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
-function createRiderContext(): TrpcContext {
+function createRiderContext(riderId: number = 1): TrpcContext {
   const user: AuthenticatedUser = {
-    id: 1,
-    openId: "rider-test-user",
+    id: riderId,
+    openId: `rider-test-user-${riderId}`,
     email: "rider@example.com",
     name: "Test Rider",
     phone: null,
@@ -102,7 +102,7 @@ function createAdminContext(): TrpcContext {
 
 describe("Ride Request Flow", () => {
   it("allows rider to request a ride", async () => {
-    const ctx = createRiderContext();
+    const ctx = createRiderContext(1001);
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.rider.requestRide({
@@ -123,7 +123,7 @@ describe("Ride Request Flow", () => {
   });
 
   it("calculates fare correctly for different vehicle types", async () => {
-    const ctx = createRiderContext();
+    const ctx = createRiderContext(1002);
     const caller = appRouter.createCaller(ctx);
 
     const economyFare = await caller.common.calculateFare({
@@ -245,7 +245,7 @@ describe("Admin Operations", () => {
 
 describe("Access Control", () => {
   it("prevents non-driver from accessing driver endpoints", async () => {
-    const ctx = createRiderContext();
+    const ctx = createRiderContext(1003);
     const caller = appRouter.createCaller(ctx);
 
     await expect(
@@ -254,7 +254,7 @@ describe("Access Control", () => {
   });
 
   it("prevents non-admin from accessing admin endpoints", async () => {
-    const ctx = createRiderContext();
+    const ctx = createRiderContext(1004);
     const caller = appRouter.createCaller(ctx);
 
     await expect(caller.admin.getDashboardStats()).rejects.toThrow();

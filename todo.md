@@ -227,3 +227,13 @@
 - [ ] Set primary vehicle selection
 - [x] Add bilingual support for vehicle management
 - [x] Test vehicle management functionality
+
+## Critical Ride Flow Fixes (Uber-like behavior)
+- [x] Prevent rider from creating multiple active rides (only one active ride at a time)
+- [x] Prevent driver from accepting multiple rides (only one active ride at a time)
+- [x] Add automatic navigation to active ride page after driver accepts ride
+- [x] Add validation to check for existing active rides before creating new ride
+- [x] Add validation to check for existing active rides before accepting ride
+- [x] Update UI to disable ride request button when rider has active ride
+- [x] Update UI to hide ride requests when driver has active ride
+- [x] Test complete ride flow from request to completion

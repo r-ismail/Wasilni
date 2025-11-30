@@ -38,7 +38,7 @@ function createRiderContext(id: number = 1): TrpcContext {
 
 describe("Ride-Sharing Feature", () => {
   it("calculates discounted fare for shared rides", async () => {
-    const ctx = createRiderContext();
+    const ctx = createRiderContext(2001);
     const caller = appRouter.createCaller(ctx);
 
     const regularFare = await caller.common.calculateFare({
@@ -60,7 +60,7 @@ describe("Ride-Sharing Feature", () => {
   });
 
   it("allows rider to create a shared ride", async () => {
-    const ctx = createRiderContext();
+    const ctx = createRiderContext(2002);
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.rider.requestRide({
@@ -83,7 +83,7 @@ describe("Ride-Sharing Feature", () => {
   });
 
   it("finds compatible shared rides", async () => {
-    const ctx = createRiderContext(2);
+    const ctx = createRiderContext(2003);
     const caller = appRouter.createCaller(ctx);
 
     // Search for rides in similar area
@@ -99,7 +99,7 @@ describe("Ride-Sharing Feature", () => {
   });
 
   it("retrieves passenger list for a ride", async () => {
-    const ctx = createRiderContext();
+    const ctx = createRiderContext(2004);
     const caller = appRouter.createCaller(ctx);
 
     // This would require a ride to exist
@@ -111,7 +111,7 @@ describe("Ride-Sharing Feature", () => {
   });
 
   it("prevents joining a full shared ride", async () => {
-    const ctx = createRiderContext(2);
+    const ctx = createRiderContext(2005);
     const caller = appRouter.createCaller(ctx);
 
     // Attempting to join a non-existent ride should fail
@@ -176,7 +176,7 @@ describe("Driver Passenger Management", () => {
 
 describe("Shared Ride Fare Calculation", () => {
   it("applies correct discount percentage for all vehicle types", async () => {
-    const ctx = createRiderContext();
+    const ctx = createRiderContext(2006);
     const caller = appRouter.createCaller(ctx);
 
     const vehicleTypes: Array<"economy" | "comfort" | "premium"> = [

@@ -144,6 +144,21 @@ export const appRouter = router({
         maxPassengers: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Check if rider already has an active ride
+        const existingRides = await db.getRidesByRiderId(ctx.user.id);
+        const activeRide = existingRides.find(r => 
+          r.status === "searching" || 
+          r.status === "accepted" || 
+          r.status === "driver_arriving" || 
+          r.status === "in_progress"
+        );
+        
+        if (activeRide) {
+          throw new TRPCError({ 
+            code: 'BAD_REQUEST', 
+            message: 'You already have an active ride. Please complete or cancel it before requesting a new one.' 
+          });
+        }
         const rideData: any = {
           riderId: ctx.user.id,
           ...input,
@@ -358,6 +373,21 @@ export const appRouter = router({
         vehicleId: z.number(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Check if driver already has an active ride
+        const existingRides = await db.getRidesByDriverId(ctx.user.id);
+        const activeRide = existingRides.find(r => 
+          r.status === "accepted" || 
+          r.status === "driver_arriving" || 
+          r.status === "in_progress"
+        );
+        
+        if (activeRide) {
+          throw new TRPCError({ 
+            code: 'BAD_REQUEST', 
+            message: 'You already have an active ride. Please complete it before accepting a new one.' 
+          });
+        }
+        
         const ride = await db.getRideById(input.rideId);
         if (!ride) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Ride not found' });

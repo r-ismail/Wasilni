@@ -23,6 +23,14 @@ export default function DriverDashboard() {
   });
 
   const { data: vehicles } = trpc.driver.getVehicles.useQuery();
+  
+  // Check for active ride
+  const { data: rideHistory } = trpc.driver.getRideHistory.useQuery();
+  const activeRide = rideHistory?.find((r: any) => 
+    r.status === "accepted" || 
+    r.status === "driver_arriving" || 
+    r.status === "in_progress"
+  );
 
   const updateStatusMutation = trpc.driver.updateStatus.useMutation({
     onSuccess: (_, variables) => {
@@ -40,6 +48,8 @@ export default function DriverDashboard() {
     onSuccess: () => {
       toast.success("Ride accepted! Navigate to pickup location.");
       utils.driver.getPendingRides.invalidate();
+      // Navigate to active ride page
+      window.location.href = "/driver/active-ride";
     },
     onError: (error) => {
       toast.error(`Failed to accept ride: ${error.message}`);
@@ -95,8 +105,22 @@ export default function DriverDashboard() {
           </CardContent>
         </Card>
 
+        {/* Active Ride Message */}
+        {activeRide && (
+          <Card className="border-2 border-primary">
+            <CardContent className="py-8 text-center">
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-primary" />
+              <h3 className="text-xl font-bold mb-2">You have an active ride</h3>
+              <p className="text-muted-foreground mb-4">Complete your current ride before accepting new requests</p>
+              <Button onClick={() => window.location.href = "/driver/active-ride"}>
+                Go to Active Ride
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Pending Ride Requests */}
-        {isOnline && (
+        {isOnline && !activeRide && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">{t('driver.rideRequests')}</h2>
 
