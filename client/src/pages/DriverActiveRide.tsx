@@ -14,7 +14,7 @@ export default function DriverActiveRide() {
 
   const { data: rideHistory } = trpc.driver.getRideHistory.useQuery();
   const activeRide = rideHistory?.find(
-    (r) => r.status === "accepted" || r.status === "driver_arriving" || r.status === "in_progress"
+    (r: any) => r.status === "accepted" || r.status === "driver_arriving" || r.status === "in_progress"
   );
 
   const { data: passengers } = trpc.rider.getRidePassengers.useQuery(

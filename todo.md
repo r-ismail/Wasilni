@@ -215,3 +215,15 @@
 - [x] Implement notification sound options
 - [x] Add bilingual support for notification messages
 - [x] Test push notifications across browsers
+
+## Vehicle Management for Drivers
+- [x] Verify vehicles table exists in database schema
+- [x] Add vehicle CRUD endpoints to driver router
+- [x] Create vehicle management page for drivers
+- [x] Add vehicle form with make, model, year, color, license plate
+- [x] Implement vehicle listing with edit/delete actions
+- [x] Add vehicle type selection (economy, comfort, premium)
+- [ ] Add vehicle photo upload
+- [ ] Set primary vehicle selection
+- [x] Add bilingual support for vehicle management
+- [x] Test vehicle management functionality

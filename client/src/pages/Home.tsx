@@ -159,6 +159,22 @@ export default function Home() {
             </Card>
           )}
 
+          {(user?.role === "driver" || user?.role === "admin") && (
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Link href="/driver/vehicles">
+                <CardHeader>
+                  <div className="bg-green-100 dark:bg-green-900 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                    <Car className="h-6 w-6 text-green-600 dark:text-green-300" />
+                  </div>
+                  <CardTitle>{t('driver.myVehicles')}</CardTitle>
+                  <CardDescription>
+                    {t('driver.manageVehiclesDesc')}
+                  </CardDescription>
+                </CardHeader>
+              </Link>
+            </Card>
+          )}
+
           <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => window.location.href = "/settings/notifications"}>
             <CardHeader>
               <div className="flex items-center gap-3">

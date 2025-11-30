@@ -438,10 +438,70 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    getRideHistory: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getRidesByRiderId(ctx.user.id);
+    // Vehicle Management
+    getVehicles: driverProcedure.query(async ({ ctx }) => {
+      return await db.getVehiclesByDriverId(ctx.user.id);
     }),
 
+    addVehicle: driverProcedure
+      .input(z.object({
+        make: z.string().min(1),
+        model: z.string().min(1),
+        year: z.number().min(1900).max(new Date().getFullYear() + 1),
+        color: z.string().min(1),
+        licensePlate: z.string().min(1),
+        vehicleType: z.enum(["economy", "comfort", "premium"]),
+        capacity: z.number().min(1).max(8).default(4),
+        photo: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const vehicleId = await db.createVehicle({
+          ...input,
+          driverId: ctx.user.id,
+        });
+        return { success: true, vehicleId };
+      }),
+
+    updateVehicle: driverProcedure
+      .input(z.object({
+        id: z.number(),
+        make: z.string().min(1),
+        model: z.string().min(1),
+        year: z.number().min(1900).max(new Date().getFullYear() + 1),
+        color: z.string().min(1),
+        licensePlate: z.string().min(1),
+        vehicleType: z.enum(["economy", "comfort", "premium"]),
+        capacity: z.number().min(1).max(8),
+        photo: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify vehicle belongs to driver
+        const vehicle = await db.getVehicleById(input.id);
+        if (!vehicle || vehicle.driverId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Vehicle not found or access denied' });
+        }
+        
+        await db.updateVehicle(input.id, input);
+        return { success: true };
+      }),
+
+    deleteVehicle: driverProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify vehicle belongs to driver
+        const vehicle = await db.getVehicleById(input.id);
+        if (!vehicle || vehicle.driverId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Vehicle not found or access denied' });
+        }
+        
+        await db.deleteVehicle(input.id);
+        return { success: true };
+      }),
+
+    getRideHistory: driverProcedure.query(async ({ ctx }) => {
+      return await db.getRidesByDriverId(ctx.user.id);
+    }),
+    
     getEarnings: protectedProcedure.query(async ({ ctx }) => {
       const payments = await db.getPaymentsByDriverId(ctx.user.id);
       const totalEarnings = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -475,30 +535,6 @@ export const appRouter = router({
         
         return { success: true };
       }),
-    
-    // Vehicle management
-    addVehicle: driverProcedure
-      .input(z.object({
-        make: z.string(),
-        model: z.string(),
-        year: z.number(),
-        color: z.string(),
-        licensePlate: z.string(),
-        vehicleType: z.enum(["economy", "comfort", "premium"]),
-        capacity: z.number().default(4),
-        photo: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.createVehicle({
-          driverId: ctx.user.id,
-          ...input,
-        });
-        return { success: true };
-      }),
-    
-    getVehicles: driverProcedure.query(async ({ ctx }) => {
-      return await db.getVehiclesByDriverId(ctx.user.id);
-    }),
     
     // Passenger management for shared rides
     updatePassengerStatus: driverProcedure

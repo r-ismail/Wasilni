@@ -183,7 +183,9 @@ export async function createVehicle(vehicle: InsertVehicle) {
   if (!db) throw new Error("Database not available");
   
   const result = await db.insert(vehicles).values(vehicle);
-  return result;
+  // For MySQL, the result has insertId as a bigint
+  const insertId = (result as any)[0]?.insertId || (result as any).insertId;
+  return Number(insertId);
 }
 
 export async function getVehiclesByDriverId(driverId: number) {
@@ -206,6 +208,13 @@ export async function updateVehicle(vehicleId: number, updates: Partial<InsertVe
   if (!db) return;
   
   await db.update(vehicles).set(updates).where(eq(vehicles.id, vehicleId));
+}
+
+export async function deleteVehicle(vehicleId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(vehicles).where(eq(vehicles.id, vehicleId));
 }
 
 // ============ RIDE OPERATIONS ============

@@ -10,6 +10,7 @@ import RiderHistory from "./pages/RiderHistory";
 import DriverDashboard from "./pages/DriverDashboard";
 import DriverEarnings from "./pages/DriverEarnings";
 import DriverActiveRide from "./pages/DriverActiveRide";
+import DriverVehicles from "./pages/DriverVehicles";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminCancellations from "./pages/AdminCancellations";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/driver/dashboard" component={DriverDashboard} />
       <Route path="/driver/earnings" component={DriverEarnings} />
       <Route path="/driver/active-ride" component={DriverActiveRide} />
+      <Route path="/driver/vehicles" component={DriverVehicles} />
       
       {/* Admin Routes */}
       <Route path="/admin/dashboard" component={AdminDashboard} />
