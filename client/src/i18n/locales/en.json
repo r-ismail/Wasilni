@@ -86,7 +86,12 @@
     "destination": "Destination",
     "cancelRide": "Cancel Ride",
     "rateDriver": "Rate Driver",
-    "rateExperience": "How was your experience with this ride?"
+    "rateExperience": "How was your experience with this ride?",
+    "rideAccepted": "Driver accepted your ride!",
+    "driverArriving": "Driver is arriving at pickup location",
+    "tripStarted": "Trip has started",
+    "tripCompleted": "Trip completed successfully",
+    "rideCancelled": "Ride was cancelled"
   },
   "driver": {
     "dashboard": "Driver Dashboard",

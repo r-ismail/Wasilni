@@ -86,7 +86,12 @@
     "destination": "الوجهة",
     "cancelRide": "إلغاء الرحلة",
     "rateDriver": "تقييم السائق",
-    "rateExperience": "كيف كانت تجربتك مع هذه الرحلة؟"
+    "rateExperience": "كيف كانت تجربتك مع هذه الرحلة؟",
+    "rideAccepted": "قبل السائق رحلتك!",
+    "driverArriving": "السائق في الطريق إلى موقع الاستلام",
+    "tripStarted": "بدأت الرحلة",
+    "tripCompleted": "اكتملت الرحلة بنجاح",
+    "rideCancelled": "تم إلغاء الرحلة"
   },
   "driver": {
     "dashboard": "لوحة السائق",

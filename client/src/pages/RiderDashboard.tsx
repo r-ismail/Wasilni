@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { MapView } from "@/components/Map";
 import { LocationSearchInput } from "@/components/LocationSearchInput";
 import { LiveRideTracking } from "@/components/LiveRideTracking";
+import { useSocket } from "@/contexts/SocketContext";
 import { Loader2, MapPin, Navigation, Users, Star, DollarSign } from "lucide-react";
 import {
   Dialog,
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/input";
 export default function RiderDashboard() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { socket, isConnected } = useSocket();
   const [pickupAddress, setPickupAddress] = useState("");
   const [pickupLat, setPickupLat] = useState("");
   const [pickupLng, setPickupLng] = useState("");
@@ -112,6 +114,49 @@ export default function RiderDashboard() {
     setDuration(null);
     setShowCompatibleRides(false);
   };
+
+  // Listen for real-time ride status updates
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    // Join rider room for targeted updates
+    socket.emit("rider:join", user.id);
+
+    // Listen for ride status updates
+    const handleStatusUpdate = (data: { rideId: number; status: string; timestamp: string }) => {
+      console.log("[Rider] Ride status update:", data);
+      
+      // Show toast notification based on status
+      switch (data.status) {
+        case "accepted":
+          toast.success(t('rider.rideAccepted'));
+          refetchActiveRide();
+          break;
+        case "driver_arriving":
+          toast.info(t('rider.driverArriving'));
+          refetchActiveRide();
+          break;
+        case "in_progress":
+          toast.info(t('rider.tripStarted'));
+          refetchActiveRide();
+          break;
+        case "completed":
+          toast.success(t('rider.tripCompleted'));
+          refetchActiveRide();
+          break;
+        case "cancelled":
+          toast.error(t('rider.rideCancelled'));
+          refetchActiveRide();
+          break;
+      }
+    };
+
+    socket.on("ride:status:update", handleStatusUpdate);
+
+    return () => {
+      socket.off("ride:status:update", handleStatusUpdate);
+    };
+  }, [socket, user, t, refetchActiveRide]);
 
   const handleMapReady = useCallback((map: google.maps.Map) => {
     // Map is ready, Google Maps API is now available globally

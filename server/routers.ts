@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { getIO } from "./_core/socket";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -260,6 +261,17 @@ export const appRouter = router({
         // If driver was assigned, set them back to available
         if (ride.driverId) {
           await db.updateDriverStatus(ride.driverId, "available");
+          
+          // Emit real-time status update to driver
+          const io = getIO();
+          if (io) {
+            io.to(`driver:${ride.driverId}`).emit("ride:status:update", {
+              rideId: input.rideId,
+              status: "cancelled",
+              cancelledBy: "rider",
+              timestamp: new Date().toISOString(),
+            });
+          }
         }
         
         return { success: true };
@@ -364,6 +376,17 @@ export const appRouter = router({
         await db.assignDriverToRide(input.rideId, ctx.user.id, input.vehicleId);
         await db.updateDriverStatus(ctx.user.id, "busy");
         
+        // Emit real-time status update
+        const io = getIO();
+        if (io) {
+          io.to(`rider:${ride.riderId}`).emit("ride:status:update", {
+            rideId: input.rideId,
+            status: "accepted",
+            driverId: ctx.user.id,
+            timestamp: new Date().toISOString(),
+          });
+        }
+        
         return { success: true };
       }),
     
@@ -379,6 +402,17 @@ export const appRouter = router({
         }
         
         await db.updateRideStatus(input.rideId, input.status);
+        
+        // Emit real-time status update
+        const io = getIO();
+        if (io) {
+          io.to(`rider:${ride.riderId}`).emit("ride:status:update", {
+            rideId: input.rideId,
+            status: input.status,
+            driverId: ctx.user.id,
+            timestamp: new Date().toISOString(),
+          });
+        }
         
         // If completed, set driver back to available and create payment
         if (input.status === "completed") {
