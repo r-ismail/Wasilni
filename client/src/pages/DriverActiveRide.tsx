@@ -47,7 +47,7 @@ export default function DriverActiveRide() {
     },
   });
 
-  const handleUpdateRideStatus = (status: "driver_arriving" | "in_progress" | "completed") => {
+  const handleUpdateRideStatus = (status: "driver_arriving" | "arrived" | "in_progress" | "completed") => {
     if (!activeRide) return;
     updateRideStatusMutation.mutate({
       rideId: activeRide.id,
@@ -194,6 +194,11 @@ export default function DriverActiveRide() {
                 </Button>
               )}
               {activeRide.status === "driver_arriving" && (
+                <Button onClick={() => handleUpdateRideStatus("arrived")} className="flex-1">
+                  I've Arrived
+                </Button>
+              )}
+              {activeRide.status === "arrived" && (
                 <Button onClick={() => handleUpdateRideStatus("in_progress")} className="flex-1">
                   Start Trip
                 </Button>

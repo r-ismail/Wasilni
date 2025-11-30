@@ -81,6 +81,7 @@
     "failedToGetAddress": "Failed to get address",
     "driverOnTheWay": "Driver on the way",
     "driverArriving": "Driver arriving",
+    "driverArrived": "Driver has arrived",
     "tripInProgress": "Trip in progress",
     "call": "Call",
     "destination": "Destination",

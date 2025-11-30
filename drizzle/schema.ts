@@ -76,6 +76,7 @@ export const rides = mysqlTable("rides", {
     "searching",
     "accepted",
     "driver_arriving",
+    "arrived",
     "in_progress",
     "completed",
     "cancelled"

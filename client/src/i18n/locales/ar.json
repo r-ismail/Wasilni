@@ -81,6 +81,7 @@
     "failedToGetAddress": "فشل في الحصول على العنوان",
     "driverOnTheWay": "السائق في الطريق",
     "driverArriving": "السائق يقترب",
+    "driverArrived": "وصل السائق",
     "tripInProgress": "الرحلة جارية",
     "call": "اتصال",
     "destination": "الوجهة",

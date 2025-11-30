@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total_rides FROM rides;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3UXzMS23NJdNBBq.root --database do9graEePpJGRyUQY7rsZC --execute SELECT COUNT(*) as total_rides FROM rides;",
+  "rows": [
+    {
+      "total_rides": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_rides\n0\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

@@ -223,6 +223,8 @@ export function LiveRideTracking({ ride, onCancel }: LiveRideTrackingProps) {
         return <Badge className="bg-blue-500">{t("rider.driverOnTheWay")}</Badge>;
       case "driver_arriving":
         return <Badge className="bg-yellow-500">{t("rider.driverArriving")}</Badge>;
+      case "arrived":
+        return <Badge className="bg-orange-500">{t("rider.driverArrived")}</Badge>;
       case "in_progress":
         return <Badge className="bg-green-500">{t("rider.tripInProgress")}</Badge>;
       default:

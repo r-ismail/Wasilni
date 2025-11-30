@@ -423,7 +423,7 @@ export const appRouter = router({
     updateRideStatus: driverProcedure
       .input(z.object({
         rideId: z.number(),
-        status: z.enum(["driver_arriving", "in_progress", "completed"]),
+        status: z.enum(["driver_arriving", "arrived", "in_progress", "completed"]),
       }))
       .mutation(async ({ ctx, input }) => {
         const ride = await db.getRideById(input.rideId);

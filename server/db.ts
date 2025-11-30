@@ -237,7 +237,7 @@ export async function getRideById(rideId: number) {
 
 export async function updateRideStatus(
   rideId: number, 
-  status: "searching" | "accepted" | "driver_arriving" | "in_progress" | "completed" | "cancelled",
+  status: "searching" | "accepted" | "driver_arriving" | "arrived" | "in_progress" | "completed" | "cancelled",
   additionalUpdates?: Partial<InsertRide>
 ) {
   const db = await getDb();

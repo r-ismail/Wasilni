@@ -1,0 +1,1 @@
+ALTER TABLE `rides` MODIFY COLUMN `status` enum('searching','accepted','driver_arriving','arrived','in_progress','completed','cancelled') NOT NULL DEFAULT 'searching';
