@@ -5,6 +5,9 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
+import { getDb } from "./db";
+import { users } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -363,8 +366,8 @@ export const appRouter = router({
     getRideHistory: driverProcedure.query(async ({ ctx }) => {
       return await db.getRidesByDriverId(ctx.user.id);
     }),
-    
-    getEarnings: driverProcedure.query(async ({ ctx }) => {
+
+    getEarnings: protectedProcedure.query(async ({ ctx }) => {
       const payments = await db.getPaymentsByDriverId(ctx.user.id);
       const totalEarnings = payments.reduce((sum, p) => sum + p.amount, 0);
       
@@ -574,7 +577,34 @@ export const appRouter = router({
   // ============ COMMON OPERATIONS ============
   common: router({
     getAvailableDrivers: publicProcedure.query(async () => {
-      return await db.getAvailableDrivers();
+      const database = await getDb();
+      if (!database) return [];
+
+      // Get drivers who are online and have updated location recently (within 5 minutes)
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const drivers = await database
+        .select()
+        .from(users)
+        .where(
+          eq(users.driverStatus, "available")
+        );
+
+      // Filter drivers with recent location updates
+      return drivers
+        .filter(
+          (d) =>
+            d.currentLatitude &&
+            d.currentLongitude &&
+            d.lastLocationUpdate &&
+            new Date(d.lastLocationUpdate) > fiveMinutesAgo
+        )
+        .map((d) => ({
+          id: d.id,
+          name: d.name,
+          latitude: parseFloat(d.currentLatitude!),
+          longitude: parseFloat(d.currentLongitude!),
+          averageRating: (d.averageRating || 0) / 100,
+        }));
     }),
     
     calculateFare: publicProcedure
