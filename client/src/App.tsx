@@ -12,7 +12,8 @@ import DriverEarnings from "./pages/DriverEarnings";
 import DriverActiveRide from "./pages/DriverActiveRide";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "@/pages/AdminUsers";
-import AdminCancellations from "@/pages/AdminCancellations";
+import AdminCancellations from "./pages/AdminCancellations";
+import NotificationSettings from "./pages/NotificationSettings";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/cancellations" component={AdminCancellations} />
+      <Route path="/settings/notifications" component={NotificationSettings} />
       
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

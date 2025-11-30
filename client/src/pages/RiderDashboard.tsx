@@ -13,6 +13,7 @@ import { MapView } from "@/components/Map";
 import { LocationSearchInput } from "@/components/LocationSearchInput";
 import { LiveRideTracking } from "@/components/LiveRideTracking";
 import { useSocket } from "@/contexts/SocketContext";
+import { notificationManager } from "@/lib/notifications";
 import { Loader2, MapPin, Navigation, Users, Star, DollarSign } from "lucide-react";
 import {
   Dialog,
@@ -130,22 +131,32 @@ export default function RiderDashboard() {
       switch (data.status) {
         case "accepted":
           toast.success(t('rider.rideAccepted'));
+          // Show push notification
+          notificationManager.showRideAccepted((data as any).driverName || 'Your driver');
           refetchActiveRide();
           break;
         case "driver_arriving":
           toast.info(t('rider.driverArriving'));
+          // Show push notification if ETA < 2 minutes
+          const eta = (data as any).eta || 0;
+          if (eta <= 2) {
+            notificationManager.showDriverArriving((data as any).driverName || 'Your driver', eta);
+          }
           refetchActiveRide();
           break;
         case "in_progress":
           toast.info(t('rider.tripStarted'));
+          notificationManager.showTripStarted();
           refetchActiveRide();
           break;
         case "completed":
           toast.success(t('rider.tripCompleted'));
+          notificationManager.showTripCompleted((data as any).fare || 0);
           refetchActiveRide();
           break;
         case "cancelled":
           toast.error(t('rider.rideCancelled'));
+          notificationManager.showRideCancelled((data as any).reason);
           refetchActiveRide();
           break;
       }
