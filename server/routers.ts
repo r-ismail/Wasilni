@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { getDb } from "./db";
-import { users } from "../drizzle/schema";
+import { users, rides } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 // Admin-only procedure
@@ -480,6 +480,104 @@ export const appRouter = router({
 
   // ============ ADMIN OPERATIONS ============
   admin: router({
+    // Cancellation Management
+    getCancellationStats: adminProcedure.query(async () => {
+      const database = await getDb();
+      if (!database) return { totalCancellations: 0, cancellationRate: 0, byReason: {}, byUser: {} };
+
+      const allRides = await database.select().from(rides);
+      const cancelledRides = allRides.filter(r => r.status === "cancelled");
+      const totalRides = allRides.length;
+      const totalCancellations = cancelledRides.length;
+      const cancellationRate = totalRides > 0 ? (totalCancellations / totalRides) * 100 : 0;
+
+      const byReason: Record<string, number> = {};
+      cancelledRides.forEach(ride => {
+        const reason = ride.cancellationReason || "No reason provided";
+        byReason[reason] = (byReason[reason] || 0) + 1;
+      });
+
+      const byUser: Record<string, number> = {};
+      cancelledRides.forEach(ride => {
+        const cancelledBy = ride.cancelledBy || "unknown";
+        byUser[cancelledBy] = (byUser[cancelledBy] || 0) + 1;
+      });
+
+      return {
+        totalCancellations,
+        cancellationRate: Math.round(cancellationRate * 100) / 100,
+        byReason,
+        byUser,
+      };
+    }),
+
+    getCancelledRides: adminProcedure
+      .input(z.object({
+        cancelledBy: z.enum(["rider", "driver", "admin", "system", "all"]).optional(),
+        refundStatus: z.enum(["pending", "processed", "rejected", "all"]).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const database = await getDb();
+        if (!database) return [];
+
+        const results = await database.select().from(rides).where(eq(rides.status, "cancelled"));
+        
+        let filtered = results;
+        if (input?.cancelledBy && input.cancelledBy !== "all") {
+          filtered = filtered.filter(r => r.cancelledBy === input.cancelledBy);
+        }
+        
+        if (input?.refundStatus && input.refundStatus !== "all") {
+          filtered = filtered.filter(r => r.refundStatus === input.refundStatus);
+        }
+
+        const enrichedRides = await Promise.all(filtered.map(async (ride) => {
+          const riderData = await database.select().from(users).where(eq(users.id, ride.riderId)).limit(1);
+          const driverData = ride.driverId ? await database.select().from(users).where(eq(users.id, ride.driverId)).limit(1) : [];
+          
+          return {
+            ...ride,
+            rider: riderData[0] ? { id: riderData[0].id, name: riderData[0].name, email: riderData[0].email } : null,
+            driver: driverData[0] ? { id: driverData[0].id, name: driverData[0].name, email: driverData[0].email } : null,
+          };
+        }));
+
+        return enrichedRides.sort((a, b) => {
+          const aTime = a.cancelledAt?.getTime() || 0;
+          const bTime = b.cancelledAt?.getTime() || 0;
+          return bTime - aTime;
+        });
+      }),
+
+    processRefund: adminProcedure
+      .input(z.object({
+        rideId: z.number(),
+        refundAmount: z.number(),
+        refundStatus: z.enum(["processed", "rejected"]),
+      }))
+      .mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        const ride = await database.select().from(rides).where(eq(rides.id, input.rideId)).limit(1);
+        if (!ride[0]) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Ride not found' });
+        }
+
+        if (ride[0].status !== "cancelled") {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Ride is not cancelled' });
+        }
+
+        await database.update(rides)
+          .set({
+            refundAmount: input.refundAmount,
+            refundStatus: input.refundStatus,
+          })
+          .where(eq(rides.id, input.rideId));
+
+        return { success: true };
+      }),
+
     getDashboardStats: adminProcedure.query(async () => {
       const allRides = await db.getAllRides();
       const allUsers = await db.getAllUsers();

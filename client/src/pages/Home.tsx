@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Car, Users, Shield, MapPin } from "lucide-react";
+import { Loader2, Car, Users, Shield, MapPin, AlertCircle } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { Link } from "wouter";
 
@@ -177,7 +177,22 @@ export default function Home() {
               </Card>
 
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <Link href="/admin/users">
+                <Link href="/admin/cancellations">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-orange-100">
+                    <AlertCircle className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <CardTitle>{t("home.cancellationManagement")}</CardTitle>
+                    <CardDescription>{t("home.cancellationManagementDesc")}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+          <Link href="/admin/users">
                   <CardHeader>
                     <div className="bg-indigo-100 dark:bg-indigo-900 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                       <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />

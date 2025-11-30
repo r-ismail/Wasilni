@@ -95,7 +95,9 @@ export const rides = mysqlTable("rides", {
   cancelledAt: timestamp("cancelledAt"),
   
   cancellationReason: text("cancellationReason"),
-  cancelledBy: mysqlEnum("cancelledBy", ["rider", "driver", "admin"]),
+  cancelledBy: mysqlEnum("cancelledBy", ["rider", "driver", "admin", "system"]),
+  refundAmount: int("refundAmount"), // in cents
+  refundStatus: mysqlEnum("refundStatus", ["pending", "processed", "rejected"]),
   
   // Ride-sharing fields
   isShared: boolean("isShared").default(false).notNull(),

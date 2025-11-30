@@ -11,7 +11,8 @@ import DriverDashboard from "./pages/DriverDashboard";
 import DriverEarnings from "./pages/DriverEarnings";
 import DriverActiveRide from "./pages/DriverActiveRide";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminUsers from "./pages/AdminUsers";
+import AdminUsers from "@/pages/AdminUsers";
+import AdminCancellations from "@/pages/AdminCancellations";
 
 function Router() {
   return (
@@ -30,6 +31,7 @@ function Router() {
       {/* Admin Routes */}
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/cancellations" component={AdminCancellations} />
       
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

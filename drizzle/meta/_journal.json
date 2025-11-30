@@ -36,6 +36,13 @@
       "when": 1764522286755,
       "tag": "0004_unusual_hairball",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1764524296966,
+      "tag": "0005_right_iron_patriot",
+      "breakpoints": true
     }
   ]
 }
