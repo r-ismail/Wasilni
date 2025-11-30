@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { useState, useEffect } from "react";
 
 export default function DriverDashboard() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const utils = trpc.useUtils();
   const [isOnline, setIsOnline] = useState(user?.driverStatus === "available");
 
@@ -67,8 +69,8 @@ export default function DriverDashboard() {
     <div className="min-h-screen bg-background">
       <div className="container py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Driver Dashboard</h1>
-          <p className="text-muted-foreground">Manage your rides and availability</p>
+          <h1 className="text-3xl font-bold">{t('driver.dashboard')}</h1>
+          <p className="text-muted-foreground">{t('driver.manageRides')}</p>
         </div>
 
         {/* Online Status Toggle */}
@@ -77,10 +79,10 @@ export default function DriverDashboard() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="online-status" className="text-base font-semibold">
-                  Availability Status
+                  {t('driver.availabilityStatus')}
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  {isOnline ? "You are online and accepting rides" : "You are offline"}
+                  {isOnline ? t('driver.youAreOnline') : t('driver.youAreOffline')}
                 </p>
               </div>
               <Switch
@@ -96,7 +98,7 @@ export default function DriverDashboard() {
         {/* Pending Ride Requests */}
         {isOnline && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Ride Requests</h2>
+            <h2 className="text-2xl font-bold">{t('driver.rideRequests')}</h2>
 
             {loadingPending ? (
               <div className="space-y-4">
@@ -112,9 +114,9 @@ export default function DriverDashboard() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <Car className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">No ride requests at the moment</p>
+                  <p className="text-muted-foreground">{t('driver.noRideRequests')}</p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Keep this page open to receive new requests
+                    {t('driver.keepPageOpen')}
                   </p>
                 </CardContent>
               </Card>
@@ -124,7 +126,7 @@ export default function DriverDashboard() {
                   <Card key={ride.id} className="border-2 border-primary">
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">New Ride Request</CardTitle>
+                        <CardTitle className="text-lg">{t('driver.newRideRequest')}</CardTitle>
                         <div className="flex gap-2">
                           <Badge variant="outline">{ride.vehicleType}</Badge>
                           {ride.isShared && (
@@ -144,7 +146,7 @@ export default function DriverDashboard() {
                         <div className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 mt-1 text-green-600" />
                           <div className="flex-1">
-                            <p className="text-sm font-medium">Pickup</p>
+                            <p className="text-sm font-medium">{t('driver.pickup')}</p>
                             <p className="text-sm text-muted-foreground">{ride.pickupAddress}</p>
                           </div>
                         </div>
@@ -152,7 +154,7 @@ export default function DriverDashboard() {
                         <div className="flex items-start gap-2">
                           <Navigation className="h-4 w-4 mt-1 text-red-600" />
                           <div className="flex-1">
-                            <p className="text-sm font-medium">Dropoff</p>
+                            <p className="text-sm font-medium">{t('driver.dropoff')}</p>
                             <p className="text-sm text-muted-foreground">{ride.dropoffAddress}</p>
                           </div>
                         </div>
@@ -182,7 +184,7 @@ export default function DriverDashboard() {
                         size="lg"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Accept Ride
+                        {t('driver.acceptRide')}
                       </Button>
                     </CardContent>
                   </Card>

@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,13 +48,14 @@ export function LocationSearchInput({
   value,
   onChange,
   onLocationSelect,
-  placeholder = "Enter location",
+  placeholder,
   savedLocations = [],
   recentLocations = [],
   mapServices,
   onCurrentLocation,
   className,
 }: LocationSearchInputProps) {
+  const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,11 +65,15 @@ export function LocationSearchInput({
   const placesService = useRef<any>(null);
 
   useEffect(() => {
-    if (mapServices) {
-      autocompleteService.current = new mapServices.places.AutocompleteService();
-      // Create a dummy div for PlacesService (it requires a map or div)
-      const dummyDiv = document.createElement("div");
-      placesService.current = new mapServices.places.PlacesService(dummyDiv);
+    if (mapServices?.places?.AutocompleteService) {
+      try {
+        autocompleteService.current = new mapServices.places.AutocompleteService();
+        // Create a dummy div for PlacesService (it requires a map or div)
+        const dummyDiv = document.createElement("div");
+        placesService.current = new mapServices.places.PlacesService(dummyDiv);
+      } catch (error) {
+        console.error("Failed to initialize Google Maps services:", error);
+      }
     }
   }, [mapServices]);
 
@@ -133,7 +139,10 @@ export function LocationSearchInput({
   };
 
   const handleSuggestionClick = (suggestion: LocationSuggestion) => {
-    if (!placesService.current) return;
+    if (!placesService.current) {
+      console.warn("Places service not ready");
+      return;
+    }
 
     placesService.current.getDetails(
       {
@@ -236,7 +245,7 @@ export function LocationSearchInput({
             {showSavedRecent && savedLocations.length > 0 && (
               <div className="mb-2">
                 <p className="text-xs font-semibold text-muted-foreground px-2 py-1">
-                  Saved Locations
+                  {t('rider.savedLocations')}
                 </p>
                 {savedLocations.map((location) => (
                   <button
@@ -261,7 +270,7 @@ export function LocationSearchInput({
             {showSavedRecent && recentLocations.length > 0 && (
               <div className="mb-2">
                 <p className="text-xs font-semibold text-muted-foreground px-2 py-1">
-                  Recent Locations
+                  {t('rider.recentLocations')}
                 </p>
                 {recentLocations.slice(0, 5).map((location) => (
                   <button
@@ -283,7 +292,7 @@ export function LocationSearchInput({
             {suggestions.length > 0 && (
               <div>
                 <p className="text-xs font-semibold text-muted-foreground px-2 py-1">
-                  Suggestions
+                  {t('rider.suggestions')}
                 </p>
                 {suggestions.map((suggestion) => (
                   <button
@@ -307,14 +316,14 @@ export function LocationSearchInput({
             {/* Loading State */}
             {isLoading && (
               <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                Searching...
+                {t('rider.searching')}
               </div>
             )}
 
             {/* No Results */}
             {!isLoading && value.trim() && suggestions.length === 0 && (
               <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                No locations found
+                {t('rider.noLocationsFound')}
               </div>
             )}
           </div>

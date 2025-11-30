@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 
 export default function RiderHistory() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { data: rides, isLoading } = trpc.rider.getRideHistory.useQuery();
   const [selectedRide, setSelectedRide] = useState<number | null>(null);
   const [rating, setRating] = useState(5);
@@ -20,7 +22,7 @@ export default function RiderHistory() {
 
   const rateDriverMutation = trpc.rider.rateDriver.useMutation({
     onSuccess: () => {
-      toast.success("Rating submitted successfully");
+      toast.success(t('common.success'));
       setSelectedRide(null);
       setRating(5);
       setComment("");
@@ -71,8 +73,8 @@ export default function RiderHistory() {
       <div className="min-h-screen bg-background">
         <div className="container py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">Ride History</h1>
-            <p className="text-muted-foreground">View your past rides</p>
+            <h1 className="text-3xl font-bold">{t('home.rideHistory')}</h1>
+            <p className="text-muted-foreground">{t('home.rideHistoryDesc')}</p>
           </div>
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -99,7 +101,7 @@ export default function RiderHistory() {
         {!rides || rides.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No rides yet. Book your first ride!</p>
+              <p className="text-muted-foreground">{t('driver.noRidesYet')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -121,7 +123,7 @@ export default function RiderHistory() {
                         <div className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 mt-1 text-green-600" />
                           <div>
-                            <p className="text-sm font-medium">Pickup</p>
+                            <p className="text-sm font-medium">{t('driver.pickup')}</p>
                             <p className="text-sm text-muted-foreground">{ride.pickupAddress}</p>
                           </div>
                         </div>
@@ -129,7 +131,7 @@ export default function RiderHistory() {
                         <div className="flex items-start gap-2">
                           <Navigation className="h-4 w-4 mt-1 text-red-600" />
                           <div>
-                            <p className="text-sm font-medium">Dropoff</p>
+                            <p className="text-sm font-medium">{t('driver.dropoff')}</p>
                             <p className="text-sm text-muted-foreground">{ride.dropoffAddress}</p>
                           </div>
                         </div>
@@ -149,20 +151,20 @@ export default function RiderHistory() {
                         <DialogTrigger asChild>
                           <Button variant="outline" onClick={() => setSelectedRide(ride.id)}>
                             <Star className="h-4 w-4 mr-2" />
-                            Rate Driver
+                            {t('rider.rateDriver')}
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>Rate Your Driver</DialogTitle>
+                            <DialogTitle>{t('rider.rateDriver')}</DialogTitle>
                             <DialogDescription>
-                              How was your experience with this ride?
+                              {t('rider.rateExperience')}
                             </DialogDescription>
                           </DialogHeader>
 
                           <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                              <Label>Rating</Label>
+                              <Label>{t('common.rating')}</Label>
                               <div className="flex gap-2">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                   <button
@@ -183,10 +185,10 @@ export default function RiderHistory() {
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor="comment">Comment (Optional)</Label>
+                              <Label htmlFor="comment">{t('common.comment')}</Label>
                               <Textarea
                                 id="comment"
-                                placeholder="Share your experience..."
+                                placeholder={t('common.commentPlaceholder')}
                                 value={comment}
                                 onChange={(e) => setComment(e.target.value)}
                                 rows={4}
@@ -196,7 +198,7 @@ export default function RiderHistory() {
 
                           <DialogFooter>
                             <Button onClick={handleSubmitRating} disabled={rateDriverMutation.isPending}>
-                              Submit Rating
+                              {t('common.submit')}
                             </Button>
                           </DialogFooter>
                         </DialogContent>

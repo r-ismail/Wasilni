@@ -1,9 +1,11 @@
 import { trpc } from "@/lib/trpc";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign, TrendingUp, Calendar } from "lucide-react";
 
 export default function DriverEarnings() {
+  const { t } = useTranslation();
   const { data: earnings, isLoading } = trpc.driver.getEarnings.useQuery();
 
   if (isLoading) {
@@ -11,8 +13,8 @@ export default function DriverEarnings() {
       <div className="min-h-screen bg-background">
         <div className="container py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">Earnings</h1>
-            <p className="text-muted-foreground">Track your income</p>
+            <h1 className="text-3xl font-bold">{t('driver.earnings')}</h1>
+            <p className="text-muted-foreground">{t('driver.trackIncome')}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2].map((i) => (
@@ -43,7 +45,7 @@ export default function DriverEarnings() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('driver.totalEarnings')}</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -54,7 +56,7 @@ export default function DriverEarnings() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed Rides</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('driver.completedRides')}</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -65,7 +67,7 @@ export default function DriverEarnings() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Fare</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('driver.averageFare')}</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -80,13 +82,13 @@ export default function DriverEarnings() {
         {/* Payment History */}
         <Card>
           <CardHeader>
-            <CardTitle>Payment History</CardTitle>
-            <CardDescription>Your recent completed rides</CardDescription>
+            <CardTitle>{t('driver.paymentHistory')}</CardTitle>
+            <CardDescription>{t('driver.recentCompleted')}</CardDescription>
           </CardHeader>
           <CardContent>
             {payments.length === 0 ? (
               <div className="py-12 text-center text-muted-foreground">
-                No payments yet. Complete rides to start earning!
+                {t('driver.noPaymentsYet')}
               </div>
             ) : (
               <div className="space-y-4">

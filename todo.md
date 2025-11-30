@@ -135,10 +135,10 @@
 - [x] Test address search functionality
 
 ## Bilingual Support (Arabic/English)
-- [ ] Create i18n configuration and translation files
-- [ ] Add language switcher to navigation
-- [ ] Implement RTL layout support for Arabic
-- [ ] Translate all UI text (rider interface)
-- [ ] Translate all UI text (driver interface)
-- [ ] Translate all UI text (admin interface)
-- [ ] Test language switching functionality
+- [x] Create i18n configuration and translation files
+- [x] Add language switcher to navigation
+- [x] Implement RTL layout support for Arabic
+- [x] Translate all UI text (rider interface)
+- [x] Translate all UI text (driver interface)
+- [x] Translate all UI text (admin interface)
+- [x] Test language switching functionality

@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,7 @@ import { Input } from "@/components/ui/input";
 
 export default function RiderDashboard() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [pickupAddress, setPickupAddress] = useState("");
   const [pickupLat, setPickupLat] = useState("");
   const [pickupLng, setPickupLng] = useState("");
@@ -62,20 +64,20 @@ export default function RiderDashboard() {
   
   const addSavedLocationMutation = trpc.locations.addSavedLocation.useMutation({
     onSuccess: () => {
-      toast.success("Location saved!");
+      toast.success(t('rider.locationSaved'));
       setShowSavePickupDialog(false);
       setShowSaveDropoffDialog(false);
       setSaveLocationLabel("");
       refetchSavedLocations();
     },
     onError: () => {
-      toast.error("Failed to save location");
+      toast.error(t('common.error'));
     },
   });
 
   const joinSharedRideMutation = trpc.rider.joinSharedRide.useMutation({
     onSuccess: () => {
-      toast.success("Successfully joined shared ride!");
+      toast.success(t('rider.joinedSharedRide'));
       setShowCompatibleRides(false);
       resetForm();
     },
@@ -86,7 +88,7 @@ export default function RiderDashboard() {
 
   const requestRideMutation = trpc.rider.requestRide.useMutation({
     onSuccess: () => {
-      toast.success("Ride requested successfully! Searching for drivers...");
+      toast.success(t('rider.rideRequested'));
       resetForm();
     },
     onError: (error) => {
@@ -107,8 +109,11 @@ export default function RiderDashboard() {
     setShowCompatibleRides(false);
   };
 
-  const handleMapReady = useCallback((services: any) => {
-    setMapServices(services);
+  const handleMapReady = useCallback((map: google.maps.Map) => {
+    // Map is ready, Google Maps API is now available globally
+    if (window.google?.maps) {
+      setMapServices(window.google.maps);
+    }
   }, []);
 
   const handlePickupLocationSelect = (location: { address: string; latitude: string; longitude: string }) => {
@@ -160,36 +165,40 @@ export default function RiderDashboard() {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
 
-          if (!mapServices?.Geocoder) {
-            toast.error("Map services not ready");
+          if (!mapServices) {
+            toast.error(t('rider.mapServicesNotReady'));
             return;
           }
 
           try {
             const geocoder = new mapServices.Geocoder();
-            const result = await geocoder.geocode({ location: { lat, lng } });
-
-            if (result.results && result.results.length > 0) {
-              const address = result.results[0].formatted_address;
-              handlePickupLocationSelect({
-                address,
-                latitude: lat.toString(),
-                longitude: lng.toString(),
-              });
-              toast.success("Current location set as pickup");
-            }
+            geocoder.geocode({ location: { lat, lng } }, (results: any, status: string) => {
+              if (status === "OK" && results && results.length > 0) {
+                const address = results[0].formatted_address;
+                handlePickupLocationSelect({
+                  address,
+                  latitude: lat.toString(),
+                  longitude: lng.toString(),
+                });
+                toast.success(t('rider.currentLocationSet'));
+              } else {
+                toast.error(t('rider.failedToGetAddress'));
+              }
+            });
           } catch (error) {
-            toast.error("Failed to get address");
+            toast.error(t('rider.failedToGetAddress'));
           }
         },
         () => {
-          toast.error("Location access denied");
+          toast.error(t('rider.locationAccessDenied'));
         }
       );
     } else {
-      toast.error("Geolocation not supported");
+      toast.error(t('rider.geolocationNotSupported'));
     }
   };
+
+
 
   const handleCurrentDropoffLocation = () => {
     if (navigator.geolocation) {
@@ -198,36 +207,40 @@ export default function RiderDashboard() {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
 
-          if (!mapServices?.Geocoder) {
-            toast.error("Map services not ready");
+          if (!mapServices) {
+            toast.error(t('rider.mapServicesNotReady'));
             return;
           }
 
           try {
             const geocoder = new mapServices.Geocoder();
-            const result = await geocoder.geocode({ location: { lat, lng } });
-
-            if (result.results && result.results.length > 0) {
-              const address = result.results[0].formatted_address;
-              handleDropoffLocationSelect({
-                address,
-                latitude: lat.toString(),
-                longitude: lng.toString(),
-              });
-              toast.success("Current location set as dropoff");
-            }
+            geocoder.geocode({ location: { lat, lng } }, (results: any, status: string) => {
+              if (status === "OK" && results && results.length > 0) {
+                const address = results[0].formatted_address;
+                handleDropoffLocationSelect({
+                  address,
+                  latitude: lat.toString(),
+                  longitude: lng.toString(),
+                });
+                toast.success(t('rider.currentLocationSet'));
+              } else {
+                toast.error(t('rider.failedToGetAddress'));
+              }
+            });
           } catch (error) {
-            toast.error("Failed to get address");
+            toast.error(t('rider.failedToGetAddress'));
           }
         },
         () => {
-          toast.error("Location access denied");
+          toast.error(t('rider.locationAccessDenied'));
         }
       );
     } else {
-      toast.error("Geolocation not supported");
+      toast.error(t('rider.geolocationNotSupported'));
     }
   };
+
+
 
   const calculateRoute = async (origin: any, destination: any) => {
     if (!mapServices) return;
@@ -268,7 +281,7 @@ export default function RiderDashboard() {
 
   const handleFindSharedRides = async () => {
     if (!pickupLat || !pickupLng || !dropoffLat || !dropoffLng) {
-      toast.error("Please select both pickup and dropoff locations");
+      toast.error(t('rider.selectBothLocations'));
       return;
     }
 
@@ -302,12 +315,12 @@ export default function RiderDashboard() {
 
   const handleRequestRide = async () => {
     if (!pickupLat || !pickupLng || !dropoffLat || !dropoffLng) {
-      toast.error("Please select both pickup and dropoff locations");
+      toast.error(t('rider.selectBothLocations'));
       return;
     }
 
     if (!distance) {
-      toast.error("Please wait for route calculation");
+      toast.error(t('rider.waitForRoute'));
       return;
     }
 
@@ -329,7 +342,7 @@ export default function RiderDashboard() {
 
   const handleSavePickupLocation = () => {
     if (!saveLocationLabel.trim()) {
-      toast.error("Please enter a label");
+      toast.error(t('common.error'));
       return;
     }
 
@@ -343,7 +356,7 @@ export default function RiderDashboard() {
 
   const handleSaveDropoffLocation = () => {
     if (!saveLocationLabel.trim()) {
-      toast.error("Please enter a label");
+      toast.error(t('common.error'));
       return;
     }
 
@@ -359,8 +372,8 @@ export default function RiderDashboard() {
     <div className="min-h-screen bg-background">
       <div className="container py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Request a Ride</h1>
-          <p className="text-muted-foreground">Book a ride to your destination</p>
+          <h1 className="text-3xl font-bold">{t('rider.requestRide')}</h1>
+          <p className="text-muted-foreground">{t('rider.bookRide')}</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -368,14 +381,14 @@ export default function RiderDashboard() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Ride Details</CardTitle>
-                <CardDescription>Enter your pickup and dropoff locations</CardDescription>
+                <CardTitle>{t('rider.rideDetails')}</CardTitle>
+                <CardDescription>{t('rider.enterLocations')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Pickup Location */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>Pickup Location</Label>
+                    <Label>{t('rider.pickupLocation')}</Label>
                     {pickupLat && pickupLng && (
                       <Button
                         variant="ghost"
@@ -384,26 +397,27 @@ export default function RiderDashboard() {
                         className="h-7 text-xs"
                       >
                         <Star className="h-3 w-3 mr-1" />
-                        Save
+                        {t('rider.saveLocation')}
                       </Button>
                     )}
                   </div>
-                  <LocationSearchInput
-                    value={pickupAddress}
-                    onChange={setPickupAddress}
-                    onLocationSelect={handlePickupLocationSelect}
-                    placeholder="Enter pickup address"
-                    savedLocations={savedLocations}
-                    recentLocations={recentLocations}
-                    mapServices={mapServices}
-                    onCurrentLocation={handleCurrentPickupLocation}
-                  />
+          <LocationSearchInput
+            value={pickupAddress}
+            onChange={setPickupAddress}
+            onLocationSelect={handlePickupLocationSelect}
+            placeholder={t('rider.enterPickup')}
+            savedLocations={savedLocations}
+            recentLocations={recentLocations}
+            mapServices={mapServices}
+            onCurrentLocation={handleCurrentPickupLocation}
+            key="pickup"
+          />
                 </div>
 
                 {/* Dropoff Location */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>Dropoff Location</Label>
+                    <Label>{t('rider.dropoffLocation')}</Label>
                     {dropoffLat && dropoffLng && (
                       <Button
                         variant="ghost"
@@ -412,33 +426,34 @@ export default function RiderDashboard() {
                         className="h-7 text-xs"
                       >
                         <Star className="h-3 w-3 mr-1" />
-                        Save
+                        {t('rider.saveLocation')}
                       </Button>
                     )}
                   </div>
-                  <LocationSearchInput
-                    value={dropoffAddress}
-                    onChange={setDropoffAddress}
-                    onLocationSelect={handleDropoffLocationSelect}
-                    placeholder="Enter dropoff address"
-                    savedLocations={savedLocations}
-                    recentLocations={recentLocations}
-                    mapServices={mapServices}
-                    onCurrentLocation={handleCurrentDropoffLocation}
-                  />
+          <LocationSearchInput
+            value={dropoffAddress}
+            onChange={setDropoffAddress}
+            onLocationSelect={handleDropoffLocationSelect}
+            placeholder={t('rider.enterDropoff')}
+            savedLocations={savedLocations}
+            recentLocations={recentLocations}
+            mapServices={mapServices}
+            onCurrentLocation={handleCurrentDropoffLocation}
+            key="dropoff"
+          />
                 </div>
 
                 {/* Vehicle Type */}
                 <div className="space-y-2">
-                  <Label>Vehicle Type</Label>
+                  <Label>{t('rider.vehicleType')}</Label>
                   <Select value={vehicleType} onValueChange={(v: any) => setVehicleType(v)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="economy">Economy - $1.50/km</SelectItem>
-                      <SelectItem value="comfort">Comfort - $2.00/km</SelectItem>
-                      <SelectItem value="premium">Premium - $3.00/km</SelectItem>
+                      <SelectItem value="economy">{t('rider.economy')} - $1.50/km</SelectItem>
+                      <SelectItem value="comfort">{t('rider.comfort')} - $2.00/km</SelectItem>
+                      <SelectItem value="premium">{t('rider.premium')} - $3.00/km</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -451,7 +466,7 @@ export default function RiderDashboard() {
                     onCheckedChange={(checked) => setIsShared(checked as boolean)}
                   />
                   <Label htmlFor="shared" className="cursor-pointer">
-                    Shared Ride (20% discount)
+                    {t('rider.sharedRide')}
                   </Label>
                 </div>
 
@@ -461,7 +476,7 @@ export default function RiderDashboard() {
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Estimated Fare</p>
+                          <p className="text-sm text-muted-foreground">{t('rider.estimatedFare')}</p>
                           <p className="text-2xl font-bold">${(estimatedFare / 100).toFixed(2)}</p>
                         </div>
                         <div className="text-right text-sm text-muted-foreground">
@@ -472,7 +487,7 @@ export default function RiderDashboard() {
                       {isShared && (
                         <Badge variant="secondary" className="mt-2">
                           <Users className="h-3 w-3 mr-1" />
-                          20% discount applied
+                          {t('rider.discountApplied')}
                         </Badge>
                       )}
                     </CardContent>
@@ -487,7 +502,7 @@ export default function RiderDashboard() {
                     className="w-full"
                     size="lg"
                   >
-                    Find Shared Rides
+                    {t('rider.findSharedRides')}
                   </Button>
                 ) : (
                   <Button
@@ -497,7 +512,7 @@ export default function RiderDashboard() {
                     size="lg"
                   >
                     {requestRideMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Request Ride
+                    {t('rider.requestRideBtn')}
                   </Button>
                 )}
               </CardContent>
@@ -507,8 +522,8 @@ export default function RiderDashboard() {
             {showCompatibleRides && sharedRidesData && sharedRidesData.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Available Shared Rides</CardTitle>
-                  <CardDescription>Join an existing ride going your way</CardDescription>
+                  <CardTitle>{t('rider.availableSharedRides')}</CardTitle>
+                  <CardDescription>{t('rider.joinExistingRide')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {sharedRidesData.map((ride) => (
@@ -518,7 +533,7 @@ export default function RiderDashboard() {
                           <div className="flex items-center justify-between">
                             <Badge variant="secondary">
                               <Users className="h-3 w-3 mr-1" />
-                              {ride.currentPassengers}/{ride.maxPassengers} passengers
+                              {ride.currentPassengers}/{ride.maxPassengers} {t('rider.passengers')}
                             </Badge>
                             <p className="font-bold">${(estimatedFare! / 100).toFixed(2)}</p>
                           </div>
@@ -538,7 +553,7 @@ export default function RiderDashboard() {
                             className="w-full"
                             disabled={joinSharedRideMutation.isPending}
                           >
-                            Join This Ride
+                            {t('rider.joinThisRide')}
                           </Button>
                         </div>
                       </CardContent>
@@ -550,7 +565,7 @@ export default function RiderDashboard() {
                     className="w-full"
                     disabled={requestRideMutation.isPending}
                   >
-                    Or Create New Shared Ride
+                    {t('rider.createNewSharedRide')}
                   </Button>
                 </CardContent>
               </Card>
@@ -570,14 +585,14 @@ export default function RiderDashboard() {
       <Dialog open={showSavePickupDialog} onOpenChange={setShowSavePickupDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save Pickup Location</DialogTitle>
-            <DialogDescription>Give this location a name for quick access</DialogDescription>
+            <DialogTitle>{t('rider.savePickupLocation')}</DialogTitle>
+            <DialogDescription>{t('rider.locationNamePlaceholder')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Location Name</Label>
+              <Label>{t('rider.locationName')}</Label>
               <Input
-                placeholder="e.g., Home, Work, Gym"
+                placeholder={t('rider.locationNamePlaceholder')}
                 value={saveLocationLabel}
                 onChange={(e) => setSaveLocationLabel(e.target.value)}
               />
@@ -586,10 +601,10 @@ export default function RiderDashboard() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSavePickupDialog(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSavePickupLocation} disabled={addSavedLocationMutation.isPending}>
-              Save Location
+              {t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -599,14 +614,14 @@ export default function RiderDashboard() {
       <Dialog open={showSaveDropoffDialog} onOpenChange={setShowSaveDropoffDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save Dropoff Location</DialogTitle>
-            <DialogDescription>Give this location a name for quick access</DialogDescription>
+            <DialogTitle>{t('rider.saveDropoffLocation')}</DialogTitle>
+            <DialogDescription>{t('rider.locationNamePlaceholder')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Location Name</Label>
+              <Label>{t('rider.locationName')}</Label>
               <Input
-                placeholder="e.g., Home, Work, Gym"
+                placeholder={t('rider.locationNamePlaceholder')}
                 value={saveLocationLabel}
                 onChange={(e) => setSaveLocationLabel(e.target.value)}
               />
@@ -615,10 +630,10 @@ export default function RiderDashboard() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSaveDropoffDialog(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSaveDropoffLocation} disabled={addSavedLocationMutation.isPending}>
-              Save Location
+              {t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
