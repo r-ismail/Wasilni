@@ -285,3 +285,31 @@
 - [x] Add Socket.IO real-time notification delivery
 - [x] Add notification sound/visual feedback
 - [x] Test complete notification flow
+
+
+## React Native Mobile App Restructuring
+- [x] Analyze current project structure and identify mobile vs admin features
+- [x] Create new React Native project with Expo
+- [x] Setup i18n (react-i18next) for mobile with English + Arabic translations
+- [x] Configure tRPC client for React Native
+- [x] Setup React Navigation for mobile app
+- [x] Port authentication flow to mobile (OAuth/login)
+- [x] Port rider dashboard to mobile
+- [x] Port ride request flow to mobile
+- [x] Port live ride tracking to mobile
+- [x] Port ride history to mobile
+- [x] Port driver dashboard to mobile
+- [x] Port driver active ride to mobile
+- [x] Port driver vehicle management to mobile
+- [x] Port driver earnings to mobile
+- [ ] Add native maps integration (react-native-maps) - requires local testing
+- [ ] Add native camera for profile photos - requires local testing
+- [ ] Add native push notifications - requires local testing
+- [x] Add location permissions handling
+- [ ] Restructure web app to admin-only panel
+- [ ] Remove rider/driver features from web app
+- [ ] Keep admin dashboard, user management, cancellations on web
+- [ ] Test mobile app on iOS simulator - requires local machine
+- [ ] Test mobile app on Android emulator - requires local machine
+- [x] Create mobile app build configuration
+- [x] Document mobile app setup and deployment process
