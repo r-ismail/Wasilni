@@ -643,3 +643,24 @@ export async function markAllNotificationsAsRead(userId: number) {
       eq(notifications.isRead, false)
     ));
 }
+
+export async function getActiveRidesByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const allRides = await db.select().from(rides);
+  
+  return allRides.filter(ride => 
+    (ride.riderId === userId || ride.driverId === userId) &&
+    ["pending", "accepted", "driver_arriving", "arrived", "in_progress"].includes(ride.status)
+  );
+}
+
+export async function deleteUser(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .delete(users)
+    .where(eq(users.id, userId));
+}

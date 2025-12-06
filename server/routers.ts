@@ -820,6 +820,54 @@ export const appRouter = router({
         
         return { success: true };
       }),
+    
+    updateUser: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        role: z.enum(["rider", "driver", "admin"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const user = await db.getUserById(input.userId);
+        if (!user) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        }
+        
+        await db.upsertUser({
+          openId: user.openId,
+          name: input.name,
+          email: input.email,
+          phone: input.phone,
+          role: input.role,
+        });
+        
+        return { success: true };
+      }),
+    
+    deleteUser: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const user = await db.getUserById(input.userId);
+        if (!user) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        }
+        
+        // Check if user has active rides
+        const activeRides = await db.getActiveRidesByUserId(input.userId);
+        if (activeRides.length > 0) {
+          throw new TRPCError({ 
+            code: 'BAD_REQUEST', 
+            message: 'Cannot delete user with active rides' 
+          });
+        }
+        
+        await db.deleteUser(input.userId);
+        return { success: true };
+      }),
   }),
 
   // ============ LOCATION MANAGEMENT ============
