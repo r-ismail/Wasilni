@@ -13,7 +13,7 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["rider", "driver", "admin"]).default("rider").notNull(),
   profilePhoto: text("profilePhoto"),
-  
+
   // Driver-specific fields
   licenseNumber: varchar("licenseNumber", { length: 50 }),
   driverStatus: mysqlEnum("driverStatus", ["offline", "available", "busy"]).default("offline"),
@@ -22,7 +22,7 @@ export const users = mysqlTable("users", {
   isVerified: boolean("isVerified").default(false),
   totalRides: int("totalRides").default(0),
   averageRating: int("averageRating").default(0), // Store as integer (rating * 100) to avoid decimal
-  
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -61,7 +61,7 @@ export const rides = mysqlTable("rides", {
   riderId: int("riderId").notNull(),
   driverId: int("driverId"),
   vehicleId: int("vehicleId"),
-  
+
   // Location details
   pickupAddress: text("pickupAddress").notNull(),
   pickupLatitude: varchar("pickupLatitude", { length: 20 }).notNull(),
@@ -69,7 +69,7 @@ export const rides = mysqlTable("rides", {
   dropoffAddress: text("dropoffAddress").notNull(),
   dropoffLatitude: varchar("dropoffLatitude", { length: 20 }).notNull(),
   dropoffLongitude: varchar("dropoffLongitude", { length: 20 }).notNull(),
-  
+
   // Ride details
   vehicleType: mysqlEnum("vehicleType", ["economy", "comfort", "premium"]).notNull(),
   status: mysqlEnum("status", [
@@ -81,30 +81,30 @@ export const rides = mysqlTable("rides", {
     "completed",
     "cancelled"
   ]).default("searching").notNull(),
-  
+
   // Pricing (stored as integers in cents to avoid decimal issues)
   estimatedFare: int("estimatedFare").notNull(), // in cents
   actualFare: int("actualFare"), // in cents
   distance: int("distance"), // in meters
   duration: int("duration"), // in seconds
-  
+
   // Timestamps
   requestedAt: timestamp("requestedAt").defaultNow().notNull(),
   acceptedAt: timestamp("acceptedAt"),
   startedAt: timestamp("startedAt"),
   completedAt: timestamp("completedAt"),
   cancelledAt: timestamp("cancelledAt"),
-  
+
   cancellationReason: text("cancellationReason"),
   cancelledBy: mysqlEnum("cancelledBy", ["rider", "driver", "admin", "system"]),
   refundAmount: int("refundAmount"), // in cents
   refundStatus: mysqlEnum("refundStatus", ["pending", "processed", "rejected"]),
-  
+
   // Ride-sharing fields
   isShared: boolean("isShared").default(false).notNull(),
   maxPassengers: int("maxPassengers").default(1).notNull(),
   currentPassengers: int("currentPassengers").default(1).notNull(),
-  
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -120,13 +120,13 @@ export const payments = mysqlTable("payments", {
   rideId: int("rideId").notNull(),
   riderId: int("riderId").notNull(),
   driverId: int("driverId").notNull(),
-  
+
   amount: int("amount").notNull(), // in cents
   paymentMethod: mysqlEnum("paymentMethod", ["credit_card", "cash", "wallet"]).notNull(),
   status: mysqlEnum("status", ["pending", "completed", "failed", "refunded"]).default("pending").notNull(),
-  
+
   transactionId: varchar("transactionId", { length: 100 }),
-  
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -140,15 +140,15 @@ export type InsertPayment = typeof payments.$inferInsert;
 export const ratings = mysqlTable("ratings", {
   id: int("id").autoincrement().primaryKey(),
   rideId: int("rideId").notNull(),
-  
+
   // Rating from rider to driver
   riderToDriverRating: int("riderToDriverRating"), // 1-5 scale
   riderToDriverComment: text("riderToDriverComment"),
-  
+
   // Rating from driver to rider
   driverToRiderRating: int("driverToRiderRating"), // 1-5 scale
   driverToRiderComment: text("driverToRiderComment"),
-  
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -178,7 +178,7 @@ export const ridePassengers = mysqlTable("ridePassengers", {
   id: int("id").autoincrement().primaryKey(),
   rideId: int("rideId").notNull(),
   passengerId: int("passengerId").notNull(),
-  
+
   // Individual passenger pickup/dropoff
   pickupAddress: text("pickupAddress").notNull(),
   pickupLatitude: varchar("pickupLatitude", { length: 20 }).notNull(),
@@ -186,21 +186,21 @@ export const ridePassengers = mysqlTable("ridePassengers", {
   dropoffAddress: text("dropoffAddress").notNull(),
   dropoffLatitude: varchar("dropoffLatitude", { length: 20 }).notNull(),
   dropoffLongitude: varchar("dropoffLongitude", { length: 20 }).notNull(),
-  
+
   // Individual fare (split from total)
   fare: int("fare").notNull(), // in cents
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "completed", "failed"]).default("pending").notNull(),
-  
+
   // Status for this passenger
   status: mysqlEnum("status", [
     "waiting",
     "picked_up",
     "dropped_off"
   ]).default("waiting").notNull(),
-  
+
   pickedUpAt: timestamp("pickedUpAt"),
   droppedOffAt: timestamp("droppedOffAt"),
-  
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -214,12 +214,12 @@ export type InsertRidePassenger = typeof ridePassengers.$inferInsert;
 export const savedLocations = mysqlTable("savedLocations", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  
+
   label: varchar("label", { length: 100 }).notNull(), // e.g., "Home", "Work", "Gym"
   address: text("address").notNull(),
   latitude: varchar("latitude", { length: 20 }).notNull(),
   longitude: varchar("longitude", { length: 20 }).notNull(),
-  
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -233,11 +233,11 @@ export type InsertSavedLocation = typeof savedLocations.$inferInsert;
 export const recentLocations = mysqlTable("recentLocations", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  
+
   address: text("address").notNull(),
   latitude: varchar("latitude", { length: 20 }).notNull(),
   longitude: varchar("longitude", { length: 20 }).notNull(),
-  
+
   usedAt: timestamp("usedAt").defaultNow().notNull(),
 });
 
@@ -250,7 +250,7 @@ export type InsertRecentLocation = typeof recentLocations.$inferInsert;
 export const notifications = mysqlTable("notifications", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  
+
   type: mysqlEnum("type", [
     "ride_accepted",
     "driver_arriving",
@@ -262,16 +262,16 @@ export const notifications = mysqlTable("notifications", {
     "rating_received",
     "system"
   ]).notNull(),
-  
+
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
-  
+
   // Related entities
   rideId: int("rideId"),
   relatedUserId: int("relatedUserId"), // Driver/Rider who triggered the notification
-  
+
   isRead: boolean("isRead").default(false).notNull(),
-  
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
